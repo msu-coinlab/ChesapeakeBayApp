@@ -156,11 +156,11 @@ RUN ./configure && \
     make install 
 
 WORKDIR /app_src/github/
-RUN git clone https://github.com/gtoscano/CastEvaluation.git && \
-    git clone https://github.com/gtoscano/alfred_aio.git && \
+RUN git clone https://github.com/msu-coinlab/CastEvaluation.git && \
+    git clone https://github.com/msu-coinlab/alfred_aio.git && \
     #git clone https://github.com/gtoscano/alfred.git && \
-    git clone https://github.com/gtoscano/MSUCast.git && \
-    git clone https://github.com/gtoscano/run_base
+    git clone https://github.com/msu-coinlab/MSUCast.git && \
+    git clone https://github.com/msu-coinlab/run_base.git
 
 
 WORKDIR /app_src/CastEvaluation

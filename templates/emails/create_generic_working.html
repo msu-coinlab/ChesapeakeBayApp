@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <div class="container">
+        <div class="px-5 my-5 text-center">
+            <h1>{{ page_title }}</h1>
+            <p></p>
+        </div>
+        <div class="container">
+            <div class="px-5 my-5">
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{form |crispy}}
+                    <a href="{{request.META.HTTP_REFERER|escape}}" class="btn btn-primary btn-block">Cancel</a><button type="submit" class="btn btn-primary btn-block">{{ button_name }}</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="px-5 my-5 text-right">
+        <a href="{{request.META.HTTP_REFERER|escape}}">Back</a>
+        </div>
+    </div>
+{% endblock %}

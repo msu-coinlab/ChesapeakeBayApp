@@ -1,0 +1,123 @@
+
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div x-data="scatterPlotApp()" x-init="initPlot()">
+    <div>
+        <select x-on:change="changeView($event.target.value)">
+            <option value="normal-view">Normal View</option>
+            <option value="random">Random</option>
+        </select>
+    </div>
+
+    <div id="plot"></div> <!-- Plotly plot will be rendered here -->
+    <table id="infoTable" class="display" style="width:100%">
+        <!-- Table will be filled dynamically -->
+    </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+function scatterPlotApp() {
+    return {
+        dataPoints: JSON.parse('{{ data_points|safe }}'), // Initial data points
+        selectedIndices: [], // Tracks selected points by their indices
+        initPlot: function() {
+            this.plotData(this.dataPoints);
+        },
+        plotData: function(data) {
+            const component = this; // Reference to use inside nested functions
+
+            // Update colors based on selected indices
+            let colors = data.map((_, index) => 
+                this.selectedIndices.includes(index) ? 'red' : 'blue');
+
+            const trace = {
+                x: data.map(point => point.x),
+                y: data.map(point => point.y),
+                mode: 'markers',
+                type: 'scatter',
+                text: data.map(point => point.name),
+                marker: { size: 12, color: colors },
+            };
+
+            const layout = {
+                hovermode: 'closest',
+                title: 'Scatter Plot Example',
+            };
+
+            Plotly.newPlot('plot', [trace], layout);
+
+            document.getElementById('plot').on('plotly_click', data => {
+                const idx = data.points[0].pointIndex;
+                // Toggle selection
+                if (component.selectedIndices.includes(idx)) {
+                    component.selectedIndices = component.selectedIndices.filter(i => i !== idx);
+                } else {
+                    component.selectedIndices.push(idx);
+                }
+                component.updateDetailsTable();
+                component.plotData(component.dataPoints); // Replot to update colors
+            });
+        },
+        updateDetailsTable: function() {
+            const infoTable = document.getElementById('infoTable');
+            // Clear existing columns except for the header
+            infoTable.innerHTML = '<tr><th>Name</th><th>X Value</th><th>Y Value</th><th>Detail</th></tr>';
+
+            // Add a column for each selected point
+            this.selectedIndices.forEach(index => {
+                const point = this.dataPoints[index];
+                let newRow = infoTable.insertRow(-1); // Append row at the end of the table
+                newRow.insertCell(0).innerHTML = point.name;
+                newRow.insertCell(1).innerHTML = point.x;
+                newRow.insertCell(2).innerHTML = point.y;
+                newRow.insertCell(3).innerHTML = point.detail;
+            });
+        },
+        changeView: function(view) {
+            if (view === 'random') {
+                this.selectedIndices = []; // Reset selection
+                this.fetchRandomPoints();
+            } else {
+                this.selectedIndices = []; // Reset selection
+                this.initPlot(); // Re-initialize with original data
+            }
+            this.updateDetailsTable(); // Clear the details table
+        },
+        fetchRandomPoints: function() {
+            const component = this;
+            fetch('/solution/htmx-random-points/')
+                .then(response => response.json())
+                .then(data => {
+                    component.dataPoints = data; // Update with new random data
+                    component.selectedIndices = []; // Reset selection
+                    component.plotData(component.dataPoints); // Replot with new data
+                });
+        },
+    };
+}
+
+$(document).ready(function() {
+    $('.infoTable').DataTable({
+        "pagingType": "simple_numbers", // Example customization
+        "searching": true, // Enable the search box
+        "ordering": true, // Enable column ordering
+        "autoWidth": false, // Disable the autoWidth feature
+        "pageLength": 25,
+    });
+});
+</script>
+{% endblock %}

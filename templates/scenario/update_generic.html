@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+
+{% block content %}
+<ul class="steps">
+  <li class="step step-primary">Info</li>
+  <li class="step">Loads</li>
+  <li class="step">BMP Selection</li>
+  <li class="step">Update Costs</li>
+  <li class="step">BMP Constraint</li>
+  <li class="step">BMP Constraint Advanced</li>
+</ul>
+
+<div id="content_step1">
+  <!-- Content for Step 1 -->
+</div>
+<div id="content_step2" style="display: none;">
+  <!-- Content for Step 2 -->
+</div>
+
+<div id="content_step3" style="display: none;">
+  <!-- Content for Step 2 -->
+</div>
+
+<div id="content_step4" style="display: none;">
+  <!-- Content for Step 2 -->
+</div>
+
+<div id="content_step5" style="display: none;">
+  <!-- Content for Step 2 -->
+  <button hx-get="{% url next_step_url %}" hx-target="#content" hx-swap="outerHTML">Next</button>
+</div>
+
+
+<!-- Repeat for other steps -->
+    <div class="container">
+        <div class="px-5 my-5 text-center">
+            <h1>{{ page_title }}</h1>
+            <p></p>
+        </div>
+        <div class="px-5 my-5">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% crispy form %}
+                {% if button_name == 'Cancel' %}
+                    <a href="{{request.META.HTTP_REFERER|escape}}" class="btn btn-primary">Cancel</a>
+                {% else %}
+                    <button type="submit" value="Update" class="btn btn-primary btn-block">{{ button_name }}</button>
+                {% endif %}
+            </form>
+        </div>
+
+        <div class="px-5 my-5 text-right">
+            <a href="{{request.META.HTTP_REFERER|escape}}">Back</a>
+        </div>
+    </div>
+
+{% endblock %}
+{% block scripts %}
+    <script>
+
+function updateStepIndicator(currentStep) {
+  document.querySelectorAll('.steps .step').forEach(step => step.classList.remove('step-primary'));
+  document.getElementById(`step${currentStep}`).classList.add('step-primary');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">: {{object.title}}</h5>
+        <h5 class="card-title">Users:</h5>
+        <p class="card-text">{{object.from_user}} </p>
+        {% for user in to_users %}
+          <p class="card-text">{{user.first_name}} {{ user.last_name }}  &lt;{{ user.email }}&gt; </p>
+        {% endfor %}
+        <p class="card-text">{{object.cc_users}} </p>
+        <p class="card-text">{{object.email_template}} </p>
+        <p class="card-text">{{object.created_at}} </p>
+        <p class="card-text">{{object.send}} </p>
+    </div>
+  </div>
+
+{% endblock %}

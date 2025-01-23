@@ -1,0 +1,13 @@
+"AnimalId","AnimalName","FractionStorageLoss","FractionStorageLossWithAWMS","ManureDryFraction","MortalityFraction","AcresPerAnimalCount","AverageAnimalCountPerSystem","FractionWEPInManure","UIDisplayOrder"
+1,pullets,0.1,0.01,0.2594,0.1,0.00001,9734.0,0.19,1
+2,turkeys,0.1,0.01,0.7353,0.07,0.000023,3744.0,0.34,4
+3,hogs and pigs for breeding,0.1,0.01,0.0168,0.06,0.000311,428.0,0.37,9
+4,beef,0.4,0.01,0.12,0.06,0.00189,22.0,0.43,6
+5,broilers,0.1,0.01,0.7135,0.05,0.000003,198096.0,0.2,2
+6,dairy,0.25,0.05,0.14,0.06,0.002881,84.0,0.6,5
+7,hogs for slaughter,0.1,0.01,0.035526317,0.06,0.000111,74.0,0.37,8
+8,horses,0.05,0.02,0.15,0.06,0.006765,7.0,0.515,12
+9,layers,0.1,0.01,0.2579,0.1,0.00004,1720.0,0.19,3
+10,other cattle,0.4,0.01,0.13,0.06,0.002385,43.0,0.515,7
+11,sheep and lambs,0.05,0.02,0.28,0.06,0.000574,33.0,0.515,11
+12,goats,0.05,0.02,0.33,0.06,0.000344,13.0,0.515,10

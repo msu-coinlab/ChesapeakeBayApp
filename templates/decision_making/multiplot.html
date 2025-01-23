@@ -1,0 +1,35 @@
+
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load humanize %}
+
+{% block head %}
+    <link href=”http://cdn.pydata.org/bokeh/release/bokeh-3.3.2.min.css" rel=”stylesheet” type=”text/css”>
+    <link href=”http://cdn.pydata.org/bokeh/release/bokeh-widgets-3.3.2.min.css" rel=”stylesheet” type=”text/css”>
+
+{% endblock %}
+{% block content %}
+    <div class="flex justify-end mb-4">
+        <a href="{% url 'optimization' scenario_id %}" class="btn bg-green-600 hover:bg-green-800 text-white">Select Scenario</a>
+    </div>
+    <div>
+    {{ script|safe }}
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-3.3.2.min.js"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.3.2.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.3.2.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.3.2.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-3.3.2.min.js" crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+        var initLoadData = {{ init_load_json|safe }};
+        var dfData = {{ df_json|safe }};
+
+        Bokeh.set_log_level("info");
+    </script>
+{% endblock %}

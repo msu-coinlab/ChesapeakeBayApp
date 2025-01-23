@@ -1,0 +1,22 @@
+<table class="table w-full">
+    <!-- head -->
+    <thead>
+        <tr>
+            <th>BMP</th>
+            <th>Cost</th>
+            <th>Unit</th>
+            <th>State</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- body -->
+        {% for cost in costs %}
+            <tr>
+                <td>{{ cost.bmp }}</td>
+                <td>{{ cost.cost }}</td>
+                <td>{{ cost.unit }}</td>
+                <td>{{ cost.state }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

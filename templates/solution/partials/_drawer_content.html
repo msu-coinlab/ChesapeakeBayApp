@@ -1,0 +1,32 @@
+
+    <label class="py-1 b-4 font-bold">Show Pollution Data:</label>
+
+        <select id="selectionEdge" hx-get="{% url 'list_solutions' id=execution_id %}"
+                class="select select-bordered w-full max-w-xs" 
+                hx-trigger="change"
+                hx-target="#table-container2"
+                hx-swap="innerHTML"
+                hx-vals='javascript:{"name": "select-edge", "selected_edge": document.getElementById("selectionEdge").value}'>
+                >
+            <option value="EOS" {% if selected_edge == 'EOS' %}selected{% endif %}>Edge of Stream</option>
+            <option value="EOR" {% if selected_edge == 'EOR' %}selected{% endif %}>Edge of River</option>
+            <option value="EOT" {% if selected_edge == 'EOT' %}selected{% endif %}>Edge of Tide</option>
+        </select>
+
+    <label class="py-1 b-4 font-bold">Pollutant:</label>
+
+    <label class="py-1 b-4 font-bold">Plot Type:</label>
+    <select id="selectPlotTypeID" @change="updatePlotType" class="select select-bordered w-full max-w-xs">
+        <option value="pcp">Parallel Coordinates Plot</option>
+        <option value="scatter">Scatter Plot</option>
+        <option value="scatter3D">Scatter Plot (3D)</option>
+        <!--- <option value="splom">Scatter Plot Matrix (SPLOM)</option> 
+        <option value="heatmap">Heat Maps</option>--->
+        <!--- <option value="umap">Uniform Manifold Approximation and Projection (UMAP)"</option> --->
+    </select>
+
+
+    <!---- <ul class="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
+      <li><a>Sidebar Item 1</a></li>
+      <li><a>Sidebar Item 2</a></li>
+    </ul> ---->

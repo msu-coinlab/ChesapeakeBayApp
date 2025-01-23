@@ -1,0 +1,204 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+
+{% block head %}
+{% endblock %}
+
+{%block content %}
+
+<div class="container mx-auto p-4">
+    
+    <div class="flex justify-end mb-4">
+
+    </div>
+    <div class="flex justify-center py-6 mb-6" > 
+        <ul class="steps"> 
+          <li class="step">
+            <a href="{% url 'step_2_by_exec' execution_id %}">
+                Loads</a></li>
+          <li class="step step-primary ">
+            <a href="{% url 'step_3_by_exec' execution_id %}">
+                Selected BMPs </a></li>
+        </ul>
+    </div>
+<div class="flex justify-center mb-6" >
+    <h1 class="text-3xl font-bold">BMP Selection</h1>
+</div>
+    
+    
+    <form action="#" enctype="multipart/form-data" method="post">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-6" x-data="categoryColors()">
+                <h5 class="text-lg font-semibold">Available BMPs</h5>
+                <select id="source-select" class="form-control w-full mt-2 h-96 shadow-md" size="80" multiple="multiple">
+                    {% for category, items in source_items.items %}
+                    <optgroup label="{{ category }}" style="font-weight: bold;">
+                        {% for value, name in items %}
+                        <option value="{{ value }}" :style="'color: ' + getColor('{{ category }}')">{{ name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            
+    
+            <div class="col-span-6" x-data="categoryColors()">
+                <h5 class="text-lg font-semibold">Selected BMPs</h5>
+                <select id="target-select" class="form-control w-full mt-2 h-96 shadow-md" size="50" multiple="multiple">
+                    {% for category, items in target_items.items %}
+                    <optgroup label="{{ category }}" style="font-weight: bold;">
+                        {% for value, name in items %}
+                        <option value="{{ value }}" :style="'color: ' + getColor('{{ category }}')">{{ name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+    
+        <div class="flex justify-between py-6" >
+                <a href="{% url 'step_2_by_exec' execution_id %}" class="btn btn-primary">Previous</a>
+                <a href="{% url 'step_3_by_exec' execution_id %}" class="btn btn-primary">Advanced Settings</a>
+        </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.body.addEventListener('htmx:beforeSwap', function(event) {
+        // Check if the event is from 'save-state-trigger'
+        if (event.detail.elt.id === 'save-state-trigger') {
+            event.preventDefault(); // Stop HTMX from automatically processing the response
+
+            var response = event.detail.xhr.response;
+            var jsonResponse = JSON.parse(response);
+
+            if (jsonResponse.status !== 'success') {
+                // Handle error - show an error message
+                console.error('An error occurred');
+            }
+        }
+    });
+    window.getAllItemsWithCategories = function(selectId) {
+        var categories = [];
+        $(selectId + ' optgroup').each(function() {
+            var categoryLabel = $(this).attr('label');
+            var items = [];
+            $(this).find('option').each(function() {
+                items.push($(this).val());
+            });
+            categories.push({label: categoryLabel, items: items});
+        });
+        return categories;
+    }
+
+
+
+    $(document).ready(function() {
+	    $('#source-select, #target-select').multiselect({
+		    search: {
+                left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+            },
+            fireSearch: function(value) {
+                return value.length > 3;
+            },
+        });
+        $('#optgroup_rightSelected').click(function() {
+            moveSelectedItems('#source-select', '#target-select');
+        });
+
+        $('#optgroup_leftSelected').click(function() {
+            moveSelectedItems('#target-select', '#source-select');
+        });
+        function moveSelectedItems(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' option:selected').each(function() {
+                var item = $(this);
+                var sourceOptgroup = item.closest('optgroup');
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '" style="font-weight: bold;"></optgroup>').appendTo(targetSelectId);
+                }
+                
+                // Move the item to the appropriate category in the target select
+                item.appendTo(targetOptgroup);
+
+                // If the source optgroup has no more items, remove it
+                if (sourceOptgroup.children('option').length === 0) {
+                    sourceOptgroup.remove();
+                }
+            });
+            htmx.trigger("#save-state-trigger", "saveState");
+        }
+        // Move all categories with items from source to target
+        $('#optgroup_rightAll').click(function() {
+            moveAllItemsWithCategories('#source-select', '#target-select');
+        });
+
+        // Move all categories with items from target to source
+        $('#optgroup_leftAll').click(function() {
+            moveAllItemsWithCategories('#target-select', '#source-select');
+        });
+
+        function moveAllItemsWithCategories(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' optgroup').each(function() {
+                var sourceOptgroup = $(this);
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '" style="font-weight: bold;"></optgroup>').appendTo(targetSelectId);
+                }
+
+                // Move all items to the appropriate category in the target select
+                sourceOptgroup.children('option').appendTo(targetOptgroup);
+            });
+
+            // Clear the source select
+            $(sourceSelectId).empty();
+            htmx.trigger("#save-state-trigger", "saveState");
+        }
+
+    });
+ function categoryColors() {
+        return {
+            colors: {
+                'Land': 'brown',
+                'Landuse Change': 'olive',
+                'Efficiency': 'blue',
+                'Animal': 'red',
+                'ManureTreatment': 'purple',
+                //'Policy': 'silver',
+                'Manure Transport': 'teal',
+                'Manure Treatment': 'navy',
+                'Pound Reduction': 'fuchsia',
+                'Animal Manure': 'black',
+                //'Wastwater': 'teal',
+                'Septic': 'maroon',
+                'Natural': 'lime',
+                'Developed': 'aqua',
+                'Agriculture': 'green',
+                // Add more categories and their corresponding colors here
+            },
+            getColor(category) {
+                return this.colors[category] || 'blue'; // Default to blue if category not found
+            }
+        };
+    }
+</script>
+{% endblock %}
+
+
+

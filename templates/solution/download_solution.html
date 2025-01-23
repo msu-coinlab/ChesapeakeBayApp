@@ -1,0 +1,111 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+{% block content %}
+
+<div class="container">
+    <div class="px-5 my-5 text-center">
+        <h1 class="text-4xl font-bold text-primary">
+            {{ page_title }}
+        </h1>
+        <p></p>
+    </div>
+
+    {% render_table table %}
+
+    <table class="table w-full text-lg shadow-md" id="bmp_table">
+        <thead>
+            <tr class="h-12 text-lg border-b-0">
+                <th rowspan="1" class="border-b-0">BMP Type</th>
+                <th class="border-b-0">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if land_file %}
+            <tr class="h-12">
+                <td class="text-left">Land File</td>
+                <td id="land-download">
+                    <button hx-post="{% url 'generate_land_file' %}" hx-vals='{"solution_id": "{{ solution_id }}"}' hx-target="#land-download" hx-swap="innerHTML" class="btn btn-primary">Generate</button>
+
+                </td>
+            </tr>
+            {% endif %}
+            {% if animal_file %}
+            <tr class="h-12">
+                <td class="text-left">Animal File</td>
+                <td id="animal-download" class="text-left">
+                    <button hx-post="{% url 'generate_animal_file' %}" hx-vals='{"solution_id": "{{ solution_id }}"}' hx-target="#animal-download" hx-swap="innerHTML" class="btn btn-primary">Generate</button>
+                </td>
+            </tr>
+            {% endif %}
+            {% if manure_file %}
+            <tr class="h-12">
+                <td class="text-left">Manure File</td>
+                <td id="manure-download" class="text-left">
+                    <button hx-post="{% url 'generate_manure_file' %}" hx-vals='{"solution_id": "{{ solution_id }}"}' hx-target="#manure-download" hx-swap="innerHTML" class="btn btn-primary">Generate</button>
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <div class="px-5 my-5 text-right">
+        <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-secondary btn-sm">
+            <i class="material-icons">arrow_back</i>
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+$(document).ready(function() {
+    // Initialize the DataTable with drawCallback
+    $('.my-table').DataTable({
+        "paging": false, // Disable paging
+        "searching": false, // Disable the search box
+        "ordering": true, // Enable column ordering
+        "autoWidth": false, // Disable the autoWidth feature
+        "drawCallback": function(settings) {
+            // Format numbers in the table with commas after each draw
+            $('#bmp_table tbody tr td').each(function() {
+                var cellText = $(this).text().trim();
+                // Check if the cell text is a number (ignoring non-numeric cells like text)
+                if (!isNaN(cellText) && cellText !== '') {
+                    // Format the number with commas
+                    var formattedText = parseFloat(cellText).toLocaleString('en-US');
+                    $(this).text(formattedText); // Replace the cell content with the formatted value
+                }
+            });
+        }
+    });
+});
+    
+    
+document.body.addEventListener('htmx:afterRequest', function(event) {
+    var response = event.detail.xhr.response;
+    try {
+        var jsonResponse = JSON.parse(response);
+        if(jsonResponse.status === 'accept') {
+            var targetId = event.detail.target.id;
+            var targetElement = document.getElementById(targetId);
+            if (targetElement !== null) {
+                var downloadLink = '<a href="' + jsonResponse.file_url + '" class="btn btn-success">Download</a>';
+                targetElement.innerHTML = downloadLink;
+            } else {
+                console.error('Target element not found for id:', targetId);
+            }
+        } else {
+            console.error('File generation failed:', jsonResponse.message);
+        }
+    } catch(e) {
+        console.error('Error parsing JSON response:', e);
+    }
+});
+</script>
+{% endblock %}
+

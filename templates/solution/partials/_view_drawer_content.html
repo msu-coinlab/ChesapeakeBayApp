@@ -1,0 +1,48 @@
+<label class="py-1 b-4 font-bold">Show Pollution Data:</label>
+
+<select id="selectionEdgeId" 
+        class="select select-bordered w-full max-w-xs" 
+        hx-trigger="change"
+        hx-target="#table-container2"
+        hx-swap="innerHTML"
+        hx-vals='javascript:{"name": "select-edge", "selected_edge": document.getElementById("selectionEdge").value}'>
+        >
+    <option value="EOS" {% if selected_edge == 'EOS' %}selected{% endif %}>Edge of Stream</option>
+    <option value="EOR" {% if selected_edge == 'EOR' %}selected{% endif %}>Edge of River</option>
+    <option value="EOT" {% if selected_edge == 'EOT' %}selected{% endif %}>Edge of Tide</option>
+</select>
+<label class="py-1 b-4 font-bold">View Type:</label>
+<select
+    id="viewTypeId"
+    @change="updateViewType"
+    class="select select-bordered w-full max-w-xs"
+>
+    <option value="roadmap">Road Map</option>
+    <option value="sat">Sattelite</option>
+    <!--- <option value="umap">Uniform Manifold Approximation and Projection (UMAP)"</option> --->
+</select>
+<label class="py-1 b-4 font-bold">Scale:</label>
+<select
+    id="scaleTypeId"
+    @change="updateScaleType"
+    class="select select-bordered w-full max-w-xs"
+>
+    <option value="county">County</option>
+    <option value="lrs">Land River Segment</option>
+</select>
+
+<label class="py-1 b-4 font-bold">Load Display Table:</label>
+<select
+    id="tableTypeId"
+    class="select select-bordered w-full max-w-xs"
+>
+    <option value="simple">Loads</option>
+    <option value="diff">Reduction</option>
+    <option value="diff">Percentage Reduction</option>
+</select>
+
+<label for="min-opacity-slider">Min Opacity:</label>
+<input type="range" id="min-opacity-slider" min="0" max="1" step="0.1" value="0.1">
+<label for="max-opacity-slider">Max Opacity:</label>
+<input type="range" id="max-opacity-slider" min="0" max="1" step="0.1" value="0.9">
+

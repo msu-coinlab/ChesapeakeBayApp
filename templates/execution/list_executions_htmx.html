@@ -1,0 +1,385 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<style>
+.modal-background {
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+
+}
+
+.drawer-side {
+    z-index: 100; /* Example value; adjust as needed based on your layout */
+}
+.dt-body-right {
+    text-align: right;
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+{{ selected_edge|json_script:"selected-edge" }}
+{{ data_points|json_script:"data-points" }}
+{{ pareto_front|json_script:"pareto-front" }}
+{{ scenario_id|json_script:"scenario-id" }}
+
+
+<div
+    class="container mx-auto p-4"
+    x-data="scatterPlotApp()"
+    x-init="initPlot()"
+>
+    <div class="px-5 my-5 text-center">
+        <h1 class="text-4xl font-bold text-primary">{{ page_title }}</h1>
+        <p></p>
+    </div>
+
+    <div class="stats shadow w-full mb-5">
+        <div class="stat">
+            <div class="stat-title">Base Nitrogen Load</div>
+            <div class="stat-value" id="sumLoadTotal">{{ sum_load_total }}</div>
+            <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const sumLoadElement = document.getElementById("sumLoadTotal");
+                const sumLoadTotal = Math.round(parseFloat(sumLoadElement.innerText));  // Round to nearest integer
+                sumLoadElement.innerText = sumLoadTotal.toLocaleString(); // Format as comma-separated
+            });
+            </script>
+              
+        </div>
+        </div>
+
+    <div class="drawer drawer-end">
+        <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content fixed right-0">
+            <!-- Page content here -->
+            <label
+                for="my-drawer-4"
+                class="drawer-button btn hover:bg-green-800"
+            >
+                <span class="material-icons">settings</span>
+            </label>
+        </div>
+
+        <div class="drawer-side">
+            <label
+                for="my-drawer-4"
+                aria-label="close sidebar"
+                class="drawer-overlay"
+            ></label>
+            <div
+                id="drawer-content"
+                namae="drawer-content"
+                class="p-4 w-80 min-h-full bg-base-200 text-base-content"
+            >
+                {% include 'execution/partials/_drawer_content.html' %}
+            </div>
+        </div>
+    </div>
+    <!--- <button @click="openModal = true">Open Modal</button> -->
+
+    <div id="plot"></div>
+    <!-- Plotly plot will be rendered here -->
+    <table id="infoTable" class="display" style="width: 100%">
+        <!-- Table will be filled dynamically -->
+    </table>
+
+    <div id="table-container2" name="table-container2">
+        {% include 'execution/partials/_table.html' %}
+    </div>
+
+
+        {% if create_url %}
+            <a href="{{ create_url }}" class="btn btn-primary">
+                {{ create_title }}
+            </a>
+        {% endif %}
+    <div class="px-5 my-5 text-right">
+        <a
+            href="{{ request.META.HTTP_REFERER|escape }}"
+            class="btn btn-secondary btn-sm"
+        >
+            <i class="material-icons">arrow_back</i>
+        </a>
+    </div>
+</div>
+
+
+{% endblock %}
+
+
+
+
+{% block scripts %}
+
+<script>
+
+function initializeDataTables() {
+    // Destroy existing DataTables instance if exists to avoid reinitialization errors
+    var tableSelector = '.my-table';
+    if ($.fn.DataTable.isDataTable(tableSelector)) {
+        $(tableSelector).DataTable().destroy();
+    }
+
+    // Initialize DataTables
+    $(tableSelector).DataTable({
+        "pagingType": "simple_numbers",
+        "searching": true,
+        "ordering": true,
+        "autoWidth": false,
+        "pageLength": 25,
+         columnDefs: [
+           { 
+             targets: [], 
+             className: "dt-body-right", // Apply right text alignment
+             render: function ( data, type, row, meta ) {
+                 if(type === 'display'){
+                     return parseInt(data).toLocaleString('en-US');
+                 }
+                 return data; // Return unaltered data for other types ('sort', 'type', 'filter')
+             }
+           }],
+    });
+}
+
+// Call the function on document ready to initialize DataTables
+$(document).ready(function() {
+    initializeDataTables();
+});
+//document.body.addEventListener('htmx:afterSwap', function(event) {
+//    if (event.detail.target.id === 'table-container2') {
+//        initializeDataTables();
+//    }
+//});
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'selectionEdge') {
+        const response = JSON.parse(event.detail.xhr.response);
+        const app = scatterPlotApp(); // Or however you access your app instance
+        app.updateDataAndPlot(response.dataPoints, response.paretoFront);
+    }
+});
+document.body.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.path === "{% url 'list_executions' id=scenario_id %}") {
+        // Prevent default HTMX DOM manipulations
+        event.preventDefault();
+
+        // Assuming you have a way to parse the response and update the plot
+        const response = JSON.parse(event.detail.xhr.responseText);
+        const app = scatterPlotApp(); // Or however you access or instantiate your scatterPlotApp
+        app.updateDataAndPlot(response.dataPoints, response.paretoFront);
+    }
+});
+
+function scatterPlotApp() {
+    return {
+        paretoFront: JSON.parse('{{ pareto_front|safe }}'), // Initial data points
+        dataPoints: JSON.parse('{{ data_points|safe }}'), // Initial data points
+        openModal: false,
+        scenarioId: null, // Initial data points
+        selectedIndices: [], // Tracks selected points by their indices
+        selectedEdge: null, // Initial selected edge
+        selectPlotType: 'scatter', // Default plot type
+        selectYAxis: 'N', // options are 'pollutant',  'cost', 'N', 'P', 'S'
+        selectXAxis: 'Cost', // options are 'pollutant',  'cost', 'N', 'P', 'S'
+        initPlot: function() {
+            this.openModal = false;
+            this.selectedEdge = JSON.parse(document.getElementById('selected-edge').textContent);
+            this.scenarioId = JSON.parse(document.getElementById('scenario-id').textContent);
+            this.plotData(this.dataPoints);
+        },
+        updateDataAndPlot: function(dataPoints, paretoFront) {
+            this.dataPoints = dataPoints;
+            this.paretoFront = paretoFront;
+            this.plotData(this.dataPoints);
+        },
+        updatePlotType: function() {
+            this.selectPlotType = document.getElementById('selectPlotTypeID').value;
+            this.selectYAxis = document.getElementById('selectYAxisID').value;
+            this.selectXAxis = document.getElementById('selectXAxisID').value;
+            this.plotData(this.dataPoints); // Re-plot with the new type
+        },
+        plotData: function(dataSets) {
+            const component = this; // Reference to use inside nested functions
+            const selectPlotType = this.selectPlotType; // Use the component's state
+            const selectXAxis = this.selectXAxis; // Use the component's state
+            const selectYAxis = this.selectYAxis; // Use the component's state
+            const colorPalette = ['blue', 'green', 'orange', 'purple', 'yellow', 'cyan', 'magenta', 'lime', 'pink', 'teal'];
+            let trace, layout;
+            let traces = []; // Array to hold all the trace objects for Plotly
+        
+            if (selectPlotType === 'scatter') {
+                dataSets.forEach((data, dataIndex) => {
+                    trace = {
+                        x: data.map(point => point.Cost),
+                        y: data.map(point => point.Pollutant),
+                        id: data.map(point => point.id),
+                        mode: 'markers', // Removed 'text' from mode to avoid labels
+                        type: 'scatter',
+                        text: data.map(point => `Optimization Run ${dataIndex + 1}`), // Replace "Execution" with "Optimization Run"
+                        marker: { size: 12, color: colorPalette[dataIndex % colorPalette.length] },
+                        name: `Optimization Run ${dataIndex + 1}` // Replace "Execution" with "Optimization Run"
+                    };
+                    traces.push(trace);
+                
+                    // Add the sum_load_total line as a horizontal line on the y-axis
+                const sumLoadTotal = Math.round(parseFloat('{{ sum_load_total }}'));  // Round the sum_load_total value to the nearest integer
+                
+                // Determine the new y-axis limit by adding a bit of margin above sum_load_total
+                const yAxisUpperLimit = sumLoadTotal * 1.1;  // Increase by 10%
+        
+                // Add the line shape and annotation for the base load
+                layout = {
+                    hovermode: 'closest',
+                    title: 'Pareto Front',
+                    xaxis: {
+                        title: 'Cost'
+                    },
+                    yaxis: {
+                        title: 'Pollutant',
+                        range: [0, yAxisUpperLimit]  // Set the y-axis range to go above the red line
+                    },
+                    shapes: [
+                        {
+                            type: 'line',
+                            x0: Math.min(...dataSets[0].map(point => point.Cost)),  // Start of the line on x-axis
+                            x1: Math.max(...dataSets[0].map(point => point.Cost)),  // End of the line on x-axis
+                            y0: sumLoadTotal,  // y-coordinate of the line
+                            y1: sumLoadTotal,  // Same y-coordinate to make it a horizontal line
+                            line: {
+                                color: 'red',  // Color of the line
+                                width: 2,      // Width of the line
+                                dash: 'dot'    // Line style (dotted line)
+                            }
+                        }
+                    ],
+                    annotations: [
+                        {
+                            x: Math.max(...dataSets[0].map(point => point.Cost)) * 0.9, // Position the annotation near the right end of the plot
+                            y: sumLoadTotal,  // Position the annotation at the red line
+                            text: 'Base Load', // The label text
+                            showarrow: true,  // Display the arrow pointing to the line
+                            arrowhead: 2,     // Arrow style
+                            ax: 0,            // X-offset for the annotation
+                            ay: -20,          // Y-offset to position the label above the line
+                            font: {
+                                size: 12,
+                                color: 'red'   // Color of the annotation text
+                            }
+                        }
+                    ],
+                    showlegend: true // Optional: show legend to differentiate instances
+                };
+                });
+            }
+        
+            Plotly.newPlot('plot', traces, layout);
+        },          
+    };
+}
+function scatterPlotApp2() {
+    return {
+        paretoFront: JSON.parse('{{ pareto_front|safe }}'), // Initial data points
+        dataPoints: JSON.parse('{{ data_points|safe }}'), // Initial data points
+        openModal: false,
+        scenarioId: null, // Initial data points
+        selectedIndices: [], // Tracks selected points by their indices
+        selectedEdge: null, // Initial selected edge
+        selectPlotType: 'scatter', // Default plot type
+        initPlot: function() {
+            this.openModal = false;
+            this.selectedEdge = JSON.parse(document.getElementById('selected-edge').textContent);
+            this.scenarioId = JSON.parse(document.getElementById('scenario-id').textContent);
+            this.plotData(this.dataPoints);
+        },
+        updatePlotType: function() {
+            this.selectPlotType = document.getElementById('selectPlotTypeID').value;
+            this.plotData(this.dataPoints); // Re-plot with the new type
+        },
+        plotData: function(dataSets) {
+            const component = this; // Reference to use inside nested functions
+            const selectPlotType = this.selectPlotType; // Use the component's state
+            const selectXAxis = this.selectXAxis; // Use the component's state
+            const selectYAxis = this.selectYAxis; // Use the component's state
+            const colorPalette = ['blue', 'green', 'orange', 'purple', 'yellow', 'cyan', 'magenta', 'lime', 'pink', 'teal'];
+            let trace, layout;
+            let traces = []; // Array to hold all the trace objects for Plotly
+        
+            if (selectPlotType === 'scatter') {
+                dataSets.forEach((data, dataIndex) => {
+                    trace = {
+                        x: data.map(point => point.Cost),
+                        y: data.map(point => point.Pollutant),
+                        id: data.map(point => point.id),
+                        mode: 'markers+text',
+                        textposition: 'top center',
+                        type: 'scatter',
+                        text: data.map(point => point.name),
+                        marker: { size: 12, color: colorPalette[dataIndex % colorPalette.length] },
+                        name: `Optimization Run ${dataIndex + 1}`
+                    };
+                    traces.push(trace);
+                });
+        
+                // Add the sum_load_total line as a horizontal line on the y-axis
+                const sumLoadTotal = Math.round(parseFloat('{{ sum_load_total }}'));  // Round the sum_load_total value to the nearest integer
+                
+                // Add the line shape to the layout
+                layout = {
+                    hovermode: 'closest',
+                    title: 'Pareto Front',
+                    xaxis: {
+                        title: 'Cost'
+                    },
+                    yaxis: {
+                        title: 'Pollutant'
+                    },
+                    shapes: [
+                        {
+                            type: 'line',
+                            x0: Math.min(...dataSets[0].map(point => point.Cost)),  // Start of the line on x-axis
+                            x1: Math.max(...dataSets[0].map(point => point.Cost)),  // End of the line on x-axis
+                            y0: sumLoadTotal,  // y-coordinate of the line
+                            y1: sumLoadTotal,  // Same y-coordinate to make it a horizontal line
+                            line: {
+                                color: 'red',  // Color of the line
+                                width: 2,      // Width of the line
+                                dash: 'dot'    // Line style (dotted line)
+                            }
+                        }
+                    ],
+                    showlegend: true // Optional: show legend to differentiate instances
+                };
+            }
+        
+            Plotly.newPlot('plot', traces, layout);
+        },
+    };
+}
+window.scatterPlotApp = scatterPlotApp; // Make scatterPlotApp globally available
+</script>
+{% endblock %}

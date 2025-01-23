@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+
+{% load static %}
+{% block content %}
+
+    <div class="container">
+        <div class="px-5 my-5 text-center">
+            <h1 class="text-4xl font-bold text-primary">
+                {{ page_title }}
+            </h1>
+            <p></p>
+        </div>
+
+        {% render_table table %}
+
+        {% if create_url %}
+            <a href="{{ create_url }}" class="btn btn-primary">
+                {{ create_title }}
+            </a>
+        {% endif %}
+
+        <div class="px-5 my-5 text-right">
+            <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-secondary btn-sm">
+                <i class="material-icons">arrow_back</i>
+            </a>
+        </div>
+
+    </div>
+
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+$(document).ready(function() {
+    $('.my-table').DataTable({
+        "pagingType": "simple_numbers", // Example customization
+        "searching": true, // Enable the search box
+        "ordering": true, // Enable column ordering
+        "autoWidth": false, // Disable the autoWidth feature
+        "pageLength": 25, // Set default number of items per page
+    });
+});
+</script>
+{% endblock %}

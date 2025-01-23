@@ -1,0 +1,88 @@
+"LoadSourceId","LoadSource","LoadSourceShortName","LoadSourceDescription","SectorId","LoadSourceMajorId","LoadSourceMinorId","LoadSourceAllocationTypeId","Manure","Fertilizer","LanduseAcres","NonNMNitrogenFactor","NonNMPhosphorusFactor","ManureCurveTypeId","BiosolidCurveTypeId","FertNCurveTypeId","FertPCurveTypeId"
+1,Ag Open Space,aop,"Unmanaged agricultural land that receives no manure, biosolids, fertilizer or other nutrient applications.",1,3,5,2,0,0,1,1.0,1.0,,,,
+2,Full Season Soybeans,soy,Soybeans that are not double-cropped,1,3,1,2,1,1,1,1.2,1.5,3,3,3,3
+3,Grain with Manure,gwm,Includes the crops corn and sorghum for grain that is not double-cropped and receives inorganic fertilizer and manure where available,1,3,1,2,1,1,1,1.3,3.0,1,1,1,1
+4,Grain without Manure,gom,"Includes the crops corn and sorghum for grain that is not double-cropped and receives only inorganic fertilizer
+",1,3,1,2,0,1,1,1.2,1.5,,,1,1
+5,Leguminous Hay,lhy,"Hay crops that include species that fix nitrogen such as alfalfa, vetch and clover.
+",1,3,2,2,1,1,1,1.2,1.0,4,4,4,4
+6,Silage with Manure,swm,"Includes the crops corn and sorghum for silage or greenchop that is not double-cropped and receives fertilizer and manure where available
+",1,3,1,2,1,1,1,1.4,3.0,1,1,1,1
+7,Silage without Manure,som,"Includes the crops corn and sorghum for silage or greenchop that is not double-cropped and receives only inorganic fertilizer
+",1,3,1,2,0,1,1,1.2,1.5,,,1,1
+8,Small Grains and Grains,sgg,"Iincludes canola, oats, rye, wheat, barley, buckwheat, emmer and spelt, and triticale that is not double-cropped
+",1,3,1,2,1,1,1,1.2,1.5,2,2,2,2
+9,Double Cropped Land,dbl,"Double-cropped land represents areas that have two crops grown on the same acre between January and December. Crops eligible for double-cropping vary by state and may include alfalfa, barley, rye, small grain hay, sorghum for silage, soybeans, triticale, wheat, corn for silage or greenchop, and other haylage, grass silage, and greenchop. No other land use includes double cropping.",1,3,1,2,1,1,1,1.2,1.5,2,2,2,2
+10,Specialty Crop High,sch,"Includes bedding/garden plants, cut florist greens, potted plants, mushrooms,  other nursery and greenhouse crops, greenhouse vegetables, fruits and vegetables grown outside that are not included in Specialty Crop Low
+",1,3,1,2,1,1,1,1.3,2.0,1,1,1,1
+11,Specialty Crop Low,scl,"Includes aquatic plants, orchards, Christmas trees, asparagus, nursery stock, short-rotation woody crops, sunflower seed, berries, peas, lima and snap beans
+",1,3,1,2,1,1,1,1.2,2.0,1,1,1,1
+12,Other Agronomic Crops,oac,"Includes summer fallow, idle cropland, sod, tobacco, cotton, sweet corn, peanuts and dry edible beans
+",1,3,1,2,1,1,1,1.1,1.5,1,1,1,1
+13,Other Hay,ohy,"Hay crops that exclude species that fix nitrogen such as alfalfa and clover. Includes haylage, grass seed, and failed crops. 
+",1,3,2,2,1,1,1,1.0,1.0,5,5,5,5
+14,Pasture,pas,"Land used for pasture or grazing animals. Fertilizer and manure may be applied in addition to directly excreted manure.
+",1,3,3,2,1,1,1,1.0,1.0,5,5,5,5
+16,Riparian Pasture Deposition,rpa,"The load that is delivered to the stream from direct excretion of animals. This does not encompass a land area
+",1,3,4,2,1,0,0,,,,,,
+17,Permitted Feeding Space,fsp,"Permitted concentrated animal feeding areas including the barn and animal-intensive heavy use areas. 
+",1,4,6,1,1,0,1,,,,,,
+18,Non-Permitted Feeding Space,fnp,"Non-permitted animal feeding areas including the barn and animal-intensive heavy use areas. 
+",1,3,6,2,1,0,1,,,,,,
+20,Non-Regulated Roads,nir,"Paved and unpaved roads and bridges on land outside MS4 and CSS areas
+",2,1,8,2,0,0,1,,,,,,
+21,Non-Regulated Buildings and Other,nnr,"Buildings, driveways, sidewalks, parking lots, runways, some private roads, railroads and rail right-of-ways, and barren lands within industrial, transitional (early stages of construction), and warehousing outside MS4 and CSS areas
+",2,1,8,2,0,0,1,,,,,,
+22,Non-Regulated Tree Canopy over Impervious,nci,"Trees over roads and non-road impervious surfaces outside MS4 and CSS areas
+",2,1,8,2,0,0,1,,,,,,
+23,Non-Regulated Tree Canopy over Turf Grass,nch,"Trees within 30’-80’ of non-road impervious surfaces where the understory is assumed to be turf grass or otherwise altered through compaction, removal of surface organic material, and/or fertilization outside MS4 and CSS areas
+",2,1,7,2,0,1,1,1.0,1.0,,,,
+25,Non-Regulated Turf Grass,ntg,"Herbaceous and barren lands that have been altered through compaction, removal of organic material, and/or fertilization. These include all herbaceous and barren lands within road right-of-ways and residential, commercial, recreational, and other turf-dominated land uses (e.g., cemeteries, shopping centers) and a portion of herbaceous and barren lands within federal facilities, parks, institutional campuses, and large developed parcels. They are located outside of MS4 and CSS areas.
+",2,1,7,2,0,1,1,1.0,1.0,,,,
+26,MS4 Roads,mir,"Paved and unpaved roads and bridges on land within MS4 areas
+",2,2,8,1,0,0,1,,,,,,
+27,MS4 Buildings and Other,mnr,"Buildings, driveways, sidewalks, parking lots, runways, some private roads, railroads and rail right-of-ways, and barren lands within industrial, transitional (early stages of construction), and warehousing within MS4 areas
+",2,2,8,1,0,0,1,,,,,,
+28,MS4 Tree Canopy over Impervious,mci,"Trees over roads and non-road impervious surfaces within MS4 areas
+",2,2,8,1,0,0,1,,,,,,
+29,MS4 Tree Canopy over Turf Grass,mch,"Trees within 30’-80’ of non-road impervious surfaces where the understory is assumed to be turf grass or otherwise altered through compaction, removal of surface organic material, and/or fertilization within MS4 areas
+",2,2,7,1,0,1,1,1.0,1.0,,,,
+31,MS4 Turf Grass,mtg,"Herbaceous and barren lands that have been altered through compaction, removal of organic material, and/or fertilization. These include all herbaceous and barren lands within road right-of-ways and residential, commercial, recreational, and other turf-dominated land uses (e.g., cemeteries, shopping centers) and a portion of herbaceous and barren lands within federal facilities, parks, institutional campuses, and large developed parcels. They are located within MS4 areas.
+",2,2,7,1,0,1,1,1.0,1.0,,,,
+32,Regulated Construction,mcn,"The average acres under construction in a year that are located in permitted areas. Permits may be for MS4 areas and state-permitted areas. Some states may delegate construction permits to local jurisdictions, and these areas are also included. Construction in CSS areas are excluded.",2,2,9,1,0,0,1,,,,,,
+33,CSS Roads,cir,"Paved and unpaved roads and bridges on land in combined sewer service areas
+",2,2,8,1,0,0,1,,,,,,
+34,CSS Buildings and Other,cnr,"Buildings, driveways, sidewalks, parking lots, runways, some private roads, railroads and rail right-of-ways, and barren lands within industrial, transitional (early stages of construction), and warehousing in combined sewer service areas
+",2,2,8,1,0,0,1,,,,,,
+35,CSS Tree Canopy over Impervious,cci,"Trees over roads and non-road impervious surfaces in combined sewer service areas
+",2,2,8,1,0,0,1,,,,,,
+36,CSS Tree Canopy over Turf Grass,cch,"Trees within 30’-80’ of non-road impervious surfaces where the understory is assumed to be turf grass or otherwise altered through compaction, removal of surface organic material, and/or fertilization within CSS areas
+",2,2,7,1,0,1,1,1.0,1.0,,,,
+38,CSS Turf Grass,ctg,"Herbaceous and barren lands that have been altered through compaction, removal of organic material, and/or fertilization. These include all herbaceous and barren lands within road right-of-ways and residential, commercial, recreational, and other turf-dominated land uses (e.g., cemeteries, shopping centers) and a portion of herbaceous and barren lands within federal facilities, parks, institutional campuses, and large developed parcels. They are located within combined sewer service areas.
+",2,2,7,1,0,1,1,1.0,1.0,,,,
+39,CSS Construction,ccn,"The average acres under construction in a year that are located within CSS areas
+",2,2,9,1,0,0,1,,,,,,
+40,CSS Mixed Open,cmo,Combined Sewer System nonagricultural areas not otherwise classified,3,5,13,2,0,0,1,,,,,,
+41,CSS Forest,cfr,Combined Sewer System Harvested and True Forest,3,5,11,2,0,0,1,,,,,,
+43,Harvested Forest,hfr,"Forests that have some amount of harvesting in a year.
+",3,5,11,2,0,0,1,,,,,,
+44,True Forest,for,"Trees farther than 30’-80’ from non-road impervious surfaces and forming contiguous patches greater than 1-acre in extent
+",3,5,11,2,0,0,1,,,,,,
+45,Non-tidal Floodplain Wetland,wfp,"Transitional land between terrestrial and aquatic systems where the water table is at or near the surface or the land is covered by shallow water. Includes lacustrine, palustrine and riverine wetland systems.",3,5,12,2,0,0,1,,,,,,
+46,Headwater or Isolated Wetland,wto,"Transitional land between terrestrial and aquatic systems where the water table is at or near the surface or the land is covered by shallow water. Includes small, shallow open water ponds or potholes, often called swamps, marshes, potholes, bogs, or fens.",3,5,12,2,0,0,1,,,,,,
+48,Mixed Open,osp,"All scrub-shrub and herbaceous and barren lands that have been minimally disturbed (e.g., periodically bush hogged, meadows, etc.), reclaimed, or that have internal and/or regulated drainage. These include active, abandoned and reclaimed mines, landfills, beaches, waterbody margins, natural grasslands, utility right-of-ways and a portion of herbaceous lands within industrial, transitional (early stages of construction), and warehousing land uses. Also included are potential agricultural lands that were not mapped as either cropland or pasture in the NASS Cropland Data Layers (2008 through 2015).
+",3,5,13,2,0,0,1,,,,,,
+49,Water,wat,"All streams, ponds, swimming pools, canals, ditches, wet detention basins, reservoirs, etc. mapped from the high-resolution imagery, NWI ponds & lakes, and synthetic streams derived from a 10m-resolution National Elevation Dataset using a similar density to those mapped in the 1:24,000-scale National Hydrography Dataset
+",3,9,14,2,0,0,1,,,,,,
+50,Stream Bed and Bank,stb,"The load that is delivered to the stream from the stream bed and bank. This does not encompass a land area
+",3,5,18,2,0,0,0,,,,,,
+52,Shoreline,sho,The load that is delivered to the Chesapeake Bay from its shoreline. This does not encompass a land area.,3,5,19,2,0,0,0,,,,,,
+60,Septic,sep,"The nitrogen load delivered to streams from septic systems. This does not encompass a land area
+",4,6,15,2,0,0,0,,,,,,
+61,Rapid Infiltration Basin,rib,"A land based wastewater disposal system where wastewater that has been chemically and physically treated by a treatment plant is discharged to an unlined excavated or constructed basin. By design, the treated wastewater infiltrates to the water table. This load also includes spray irrigation on developed land areas.",4,6,15,2,0,0,0,,,,,,
+62,Industrial Wastewater Treatment Plant,ind,"The load delivered to streams from industrial wastewater. This does not encompass a land area
+",5,7,16,1,0,0,0,,,,,,
+63,Municipal Wastewater Treatment Plant,mun,"The load delivered to streams from municipal wastewater. This does not encompass a land area
+",5,7,16,1,0,0,0,,,,,,
+64,Combined Sewer Overflow,cso,"The load delivered to streams from combined stormwater and sewer overflows. This does not encompass a land area
+",5,8,17,1,0,0,0,,,,,,

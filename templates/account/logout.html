@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load i18n %}
+{% load allauth account socialaccount %}
+{% block content %}
+
+
+<div class="flex min-h-screen items-center justify-center bg-base-200">
+    <div class="m-4 min-h-[50vh] w-full max-w-sm lg:max-w-4xl">
+        <!-- logo and other content ... -->
+
+        <main class="grid bg-base-100 lg:aspect-[2/1] lg:grid-cols-2">
+            <!-- image ... -->
+
+            <!-- Logout Form -->
+            <form class="flex flex-col justify-center gap-4 px-10 py-10 lg:px-16"
+                  method="post"
+                  action="{% url 'account_logout' %}">
+
+                {% csrf_token %}
+
+                <div class="text-center">
+                    <h1 class="text-lg font-bold">{% trans "Confirm Logout" %}</h1>
+                    <p>{% trans "Are you sure you want to logout?" %}</p>
+                </div>
+
+                <!-- Logout Button -->
+                <button class="btn btn-neutral" type="submit">{% trans "Logout" %}</button>
+
+
+                <button onclick="history.back();" class="btn btn-light">{% trans "Cancel" %}</button>
+            </form>
+        </main>
+    </div>
+</div>
+{% endblock content %}

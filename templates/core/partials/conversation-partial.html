@@ -1,0 +1,12 @@
+            <div class="flex justify-start items-center mb-2 {% cycle 'bg-base-100' 'bg-base-200' %}" id="conversation-{{ conversation.id }}">
+                <a href="{% url 'index_with_id' conversation_id=conversation.id %}" class="flex-grow truncate p-4">
+                    {{ conversation.title }}
+                </a>
+                <button class="btn btn-primary ml-2 p-1 text-xs" hx-get="{% url 'edit_conversation' conversation_id=conversation.id %}" hx-target="#conversation-{{ conversation.id }}">
+                    <span class="material-icons">edit</span>
+                </button>
+                <button class="btn btn-error ml-2 p-1 text-xs" hx-post="{% url 'delete_conversation' conversation_id=conversation.id %}" hx-target="this" hx-swap="outerHTML">
+                    <span class="material-icons">delete</span>
+                </button>
+                <!-- Edit Button -->
+            </div>

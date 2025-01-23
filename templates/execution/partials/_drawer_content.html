@@ -1,0 +1,55 @@
+
+    <label class="py-1 b-4 font-bold">Show Pollution Data:</label>
+
+        <select id="selectionEdge2" hx-get="{% url 'list_executions' id=scenario_id %}"
+                class="select select-bordered w-full max-w-xs" 
+                hx-trigger="change"
+                hx-target="#plot"
+                hx-swap="outerHTML"
+                hx-vals='javascript:{"name": "select-edge", "selected_edge": document.getElementById("selectionEdge").value}'>
+                >
+            <option value="EOS" {% if selected_edge == 'EOS' %}selected{% endif %}>Edge of Stream</option>
+            <option value="EOR" {% if selected_edge == 'EOR' %}selected{% endif %}>Edge of River</option>
+            <option value="EOT" {% if selected_edge == 'EOT' %}selected{% endif %}>Edge of Tide</option>
+        </select>
+<select id="selectionEdge" 
+        hx-get="{% url 'list_executions' id=scenario_id %}"
+        hx-trigger="change"
+        hx-include="#selectionEdge"
+        hx-response-header="HX-Trigger-After-Swap">
+    <option value="EOS" {% if selected_edge == 'EOS' %}selected{% endif %}>Edge of Stream</option>
+    <option value="EOR" {% if selected_edge == 'EOR' %}selected{% endif %}>Edge of River</option>
+    <option value="EOT" {% if selected_edge == 'EOT' %}selected{% endif %}>Edge of Tide</option>
+</select>
+
+    <label class="py-1 b-4 font-bold">Plot Type:</label>
+    <select id="selectPlotTypeID" @change="updatePlotType" class="select select-bordered w-full max-w-xs">
+        <option value="scatter">Scatter Plot</option>
+        <!--- <option value="umap">Uniform Manifold Approximation and Projection (UMAP)"</option> --->
+    </select>
+    <label class="py-1 b-4 font-bold">Select X Axis:</label>
+    <select id="selectXAxisID" @change="updatePlotType" class="select select-bordered w-full max-w-xs">
+        <option value="Cost">Cost</option>
+        <option value="N">Nitrogen</option>
+        <option value="P">Phosphorus</option>
+        <option value="S">Sediments</option>
+        <option value="NR">Nitrogen Reduction</option>
+        <option value="PR">Phosphorus Reduction</option>
+        <option value="SR">Sediments Reduction</option>
+        <option value="NP">Nitrogen Percentage Reduction</option>
+        <option value="PP">Phosphorus Percentage Reduction</option>
+        <option value="SP">Sediments Percentage Reduction</option>
+    </select>
+    <label class="py-1 b-4 font-bold">Select Y Axis:</label>
+    <select id="selectYAxisID" @change="updatePlotType" class="select select-bordered w-full max-w-xs">
+        <option value="N">Nitrogen</option>
+        <option value="P">Phosphorus</option>
+        <option value="S">Sediments</option>
+        <option value="NR">Nitrogen Reduction</option>
+        <option value="PR">Phosphorus Reduction</option>
+        <option value="SR">Sediments Reduction</option>
+        <option value="NP">Nitrogen Percentage Reduction</option>
+        <option value="PP">Phosphorus Percentage Reduction</option>
+        <option value="SP">Sediments Percentage Reduction</option>
+        <option value="Cost">Cost</option>
+    </select>

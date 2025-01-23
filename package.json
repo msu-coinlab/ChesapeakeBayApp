@@ -1,0 +1,21 @@
+{
+  "name": "webcast",
+  "version": "1.0.0",
+  "description": "## Introduction Language Learning Assistant is a Django-based web application designed to aid language learners. This app features translation, chat, and conversation editing capabilities, powered by ChatGPT and an integrated text-to-voice converter. It supports Google account login for user authentication and is fully dockerized for easy setup and deployment. The user interface is enhanced using HTMX, providing a dynamic and responsive experience.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "npx postcss static_files/css/style.css -o static_files/css/myoutput.css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3"
+  },
+  "devDependencies": {
+    "postcss-cli": "^11.0.0"
+  }
+}

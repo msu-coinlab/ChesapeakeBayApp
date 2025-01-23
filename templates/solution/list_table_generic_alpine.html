@@ -1,0 +1,145 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+{% block content %}
+{{ load_data | json_script:"load-data" }}
+{{ edge_options | json_script:"edge-options" }}
+{{ selected_edge | json_script:"selected-edge" }}
+
+    <div class="container mx-auto p-4">
+        <div class="px-5 my-5 text-center">
+            <h1 class="text-4xl font-bold text-primary">
+                {{ page_title }}
+            </h1>
+            <p></p>
+        </div>
+        <div x-data="dropdownHandler()">
+            <select x-model="selectedOption"
+                class="select select-bordered w-full max-w-xs" >
+                <option value="EOS">Edge of Stream</option>
+                <option value="EOR">Edge of River</option>
+                <option value="EOT">Edge of Tide</option>
+            </select>
+
+            <table class="my-table2 table table-striped table-bordered" style="width:100%;" x-ref="dtaTable">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Cost ($)</th>
+                        <th>Nitrogen (lbs/yr)</th>
+                        <th>Phosphorus (lbs/yr)</th>
+                        <th>Sediments (lbs/yr)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="item in filteredData()" :key="item.id">
+
+                        <tr>
+                            <td x-text="item.id"></td>
+                            <td> <div x-text="item.Cost"></div></td>
+                            <td x-text="item.N"></td>
+                            <td x-text="item.P"></td>
+                            <td x-text="item.S"></td>
+                            <td x-text="item.actions"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="px-5 my-5 text-right">
+            <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-secondary btn-sm">
+                <i class="material-icons">arrow_back</i>
+            </a>
+        </div>
+    </div>
+
+
+{% endblock %}
+{% block scripts %}
+
+<script>
+
+function dropdownHandler() {
+    return {
+        selectedOption: 'EOS', // Default selection
+        data: [],
+        selectedEdge: null,
+        init() {
+            this.data = JSON.parse(document.getElementById('load-data').textContent);
+            this.selectedEdge= JSON.parse(document.getElementById('selected-edge').textContent);
+            console.log(this.selectedEdge);
+            console.log(this.data);
+            this.$nextTick(() => { // Ensure Datatables.net initializes after Alpine.js has rendered the table
+                this.initDataTable();
+            });
+            this.$watch('selectedOption', () => {
+                this.refreshDataTable(); // Refresh Datatables.net on selection change
+            });
+        },
+        initDataTable() {
+            this.$nextTick(() => {
+                if ($.fn.DataTable.isDataTable('.my-table2')) {
+                    $('.my-table2').DataTable().clear().destroy();
+                }
+                this.dataTableInstance = $('.my-table2').DataTable({
+                    "pagingType": "simple_numbers", // Example customization
+                    "searching": true, // Enable the search box
+                    "ordering": true, // Enable column ordering
+                    "autoWidth": false, // Disable the autoWidth feature
+                    "pageLength": 25,
+                    columnDefs: [
+                      { 
+                        targets: [1,2,3,4], 
+                        render: function ( data, type, row, meta ) {
+                          return  parseInt(data).toLocaleString('en-US');
+                        }
+                      }],
+                    // DataTables initialization options
+                });
+                this.refreshDataTable(); // Populate DataTable on init
+            });
+        },
+        refreshDataTable() {
+            // Call this method to refresh DataTables when data changes
+            // Prepare the data for DataTable
+            let newData = this.filteredData().map(item => Object.values(item));
+            if (this.dataTableInstance) {
+                this.dataTableInstance.clear().rows.add(newData).draw();
+            }
+        },
+        filteredData() {
+            return this.data.map(item => {
+                // Check if the selected option exists for the item
+                if (item[this.selectedOption]) {
+                    // If it exists, return an object with the Cost and the specific data for the selected option
+                    return {
+                        id: item.id,
+                        Cost: item.Cost.toFixed(0),
+                        N: parseFloat(item[this.selectedOption].N).toFixed(0),
+                        P: item[this.selectedOption].P.toFixed(0),
+                        S: item[this.selectedOption].S.toFixed(0),
+                        actions: item.actions,
+                    };
+                } else {
+                    // If the selected option does not exist, return some default values or handle the error
+                    return {
+                        id: item.id,
+                        Cost: item.CosttoFixed(0),
+                        N: 'N/A',
+                        P: 'N/A',
+                        S: 'N/A',
+                        actions: 'N/A',
+                    };
+                }
+            });
+        }
+    }
+}
+
+</script>
+{% endblock %}

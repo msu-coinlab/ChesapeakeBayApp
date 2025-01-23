@@ -1,0 +1,47 @@
+
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load i18n %}
+{% load allauth account socialaccount %}
+{% block content %}
+
+<div class="flex min-h-screen items-center justify-center bg-base-200">
+    <div class="m-4 min-h-[50vh] w-full max-w-sm lg:max-w-4xl">
+        <!-- logo and other content ... -->
+
+        <main class="grid bg-base-100 lg:aspect-[2/1] lg:grid-cols-2">
+            <!-- image ... -->
+
+				<figure class="pointer-events-none bg-base-300 object-cover max-lg:hidden">
+					<img src="https://picsum.photos/id/283/1200/1200" alt="Login" class="h-full" />
+				</figure>
+            <!-- Logout Form -->
+
+				<div  class="flex flex-col justify-center gap-4 px-10 py-10 lg:px-16" >
+            {% if process == "connect" %}
+                {% element h1 %}
+                    {% blocktrans with provider.name as provider %}Connect {{ provider }}{% endblocktrans %}
+                {% endelement %}
+                <p>
+                    {% blocktrans with provider.name as provider %}You are about to connect a new third-party account from {{ provider }}.{% endblocktrans %}
+                </p>
+            {% else %}
+                {% element h1 %}
+                    {% blocktrans with provider.name as provider %}Sign In Via {{ provider }}{% endblocktrans %}
+                {% endelement %}
+                <p>
+                    {% blocktrans with provider.name as provider %}You are about to sign in using a third-party account from {{ provider }}.{% endblocktrans %}
+                </p>
+            {% endif %}
+
+            <form method="post"  class="flex flex-col justify-center gap-4 px-10 py-10 lg:px-16" >
+                    {% csrf_token %}
+                    <button class="btn btn-neutral" type="submit">{% trans "Continue" %}</button>
+            </form>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div x-data="scatterPlotApp()" x-init="initPlot()">
+    <div id="plot"></div> <!-- Container for the Plotly plot -->
+    <table id="infoTable" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>X Value</th>
+                <th>Y Value</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- DataTables will dynamically insert data here -->
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function scatterPlotApp() {
+        return {
+            selectedPoint: null,
+            dataPoints: JSON.parse('{{ data_points|safe }}'),
+            dataTable: null,
+            initPlot: function() {
+                const trace = {
+                    x: this.dataPoints.map(point => point.x),
+                    y: this.dataPoints.map(point => point.y),
+                    mode: 'markers',
+                    type: 'scatter',
+                    marker: {size: 12, color: 'blue'}, // Default color
+                    text: this.dataPoints.map(point => point.name),
+                };
+
+                const layout = {
+                    title: 'Data Points',
+                    hovermode: 'closest'
+                };
+
+                Plotly.newPlot('plot', [trace], layout);
+
+                document.getElementById('plot').on('plotly_click', (data) => {
+                    const pointIndex = data.points[0].pointIndex;
+                    this.selectPoint(pointIndex);
+                });
+
+                this.initDataTable();
+            },
+            initDataTable: function() {
+                this.dataTable = $('#infoTable').DataTable({
+                    // DataTables configuration options
+                    columns: [
+                        { data: 'name' },
+                        { data: 'x' },
+                        { data: 'y' },
+                        { data: 'detail' }
+                    ]
+                });
+            },
+            selectPoint: function(index) {
+                const selectedPoint = this.dataPoints[index];
+                // Update DataTable with selected point's data
+                this.dataTable.clear();
+                this.dataTable.row.add({
+                    name: selectedPoint.name,
+                    x: selectedPoint.x,
+                    y: selectedPoint.y,
+                    detail: selectedPoint.detail
+                });
+                this.dataTable.draw();
+
+                // Update marker colors to indicate selection
+                let newColors = this.dataPoints.map(() => 'blue'); // Reset all to default
+                newColors[index] = 'red'; // Highlight selected point
+                Plotly.restyle('plot', 'marker.color', [newColors]);
+            }
+        };
+    }
+</script>
+
+{% endblock %}

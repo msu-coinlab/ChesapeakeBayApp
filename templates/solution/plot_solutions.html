@@ -1,0 +1,110 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+    <div class="container">
+        <div class="px-5 my-5 text-center">
+            <h1 class="text-4xl font-bold text-primary">
+                {{ page_title }}
+            </h1>
+            <p></p>
+        </div>
+
+<div x-data="plotData()" x-init="fetchScenarios()">
+    <select x-model="selectedE">
+        <option value="Eos">Eos</option>
+        <option value="Eor">Eor</option>
+        <option value="Eot">Eot</option>
+    </select>
+    
+    <select x-model="selectedAxisX">
+        <option value="Cost">Cost</option>
+        <option value="N">N</option>
+        <option value="P">P</option>
+        <option value="S">S</option>
+    </select>
+    
+    <select x-model="selectedAxisY">
+        <option value="Cost">Cost</option>
+        <option value="N">N</option>
+        <option value="P">P</option>
+        <option value="S">S</option>
+    </select>
+    
+    <button @click="updatePlot()">Plot</button>
+</div>
+
+        {% if create_url %}
+            <a href="{{ create_url }}" class="btn btn-primary">
+                {{ create_title }}
+            </a>
+        {% endif %}
+
+        <div class="px-5 my-5 text-right">
+            <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-secondary btn-sm">
+                <i class="material-icons">arrow_back</i>
+            </a>
+        </div>
+
+    </div>
+
+
+{% endblock %}
+{% block scripts %}
+<script>
+function plotData() {
+    return {
+        scenarios: [],
+        selectedE: 'Eos',
+        selectedAxisX: 'Cost',
+        selectedAxisY: 'N',
+        fetchScenarios() {
+            fetch('/solution/scenario-data/')
+                .then(response => response.json())
+                .then(data => this.scenarios = data.scenarios);
+        },
+
+        updatePlot() {
+            const traceData = this.scenarios.map(scenario => {
+                const xValue = this.selectedAxisX === 'Cost' ? scenario.total.Cost : scenario.total[this.selectedE][this.selectedAxisX];
+                const yValue = this.selectedAxisY === 'Cost' ? scenario.total.Cost : scenario.total[this.selectedE][this.selectedAxisY];
+                return {
+                    x: [xValue],
+                    y: [yValue],
+                    type: 'scatter',
+                    mode: 'markers',
+                    name: `Scenario ${scenario.id}`
+                };
+            });
+        
+            const layout = {
+                title: 'Case Study Plot',
+                xaxis: {title: this.selectedAxisX},
+                yaxis: {title: this.selectedAxisY}
+            };
+        
+            Plotly.newPlot('plotDiv', traceData, layout);
+        }
+    }
+}
+
+
+$(document).ready(function() {
+    $('.data-table').DataTable({
+        "pagingType": "simple_numbers", // Example customization
+        "searching": true, // Enable the search box
+        "ordering": true, // Enable column ordering
+        "autoWidth": false, // Disable the autoWidth feature
+        "pageLength": 25,
+    });
+});
+</script>
+{% endblock %}

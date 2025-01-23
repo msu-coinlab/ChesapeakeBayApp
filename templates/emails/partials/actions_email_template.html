@@ -1,0 +1,9 @@
+<!-- actions_column_template.html -->
+<div class="d-flex justify-content-center">
+    <a href="{% url 'update_email_template' record.slug %}" class="text-primary me-2">
+        <span class="material-icons">edit</span>
+    </a>
+    <a href="{% url 'delete_email_template' record.slug %}" class="text-danger">
+        <span class="material-icons">delete</span>
+    </a>
+</div>

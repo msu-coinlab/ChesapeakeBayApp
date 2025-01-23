@@ -1,0 +1,102 @@
+{% extends 'core/base.html' %}
+
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load i18n %}
+{% load allauth account socialaccount %}
+{% block content %}
+{% load allauth i18n socialaccount %}
+
+<div class="flex min-h-screen items-center justify-center bg-base-200">
+    <div class="m-4 min-h-[50vh] w-full max-w-sm lg:max-w-4xl">
+        <!-- logo and other content ... -->
+
+			<div class="flex items-center justify-center gap-2 p-8">
+				<svg
+					width="24"
+					height="24"
+					viewBox="0 0 1024 1024"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg">
+					<rect x="256" y="670.72" width="512" height="256" rx="128" class="fill-base-content" />
+					<circle cx="512" cy="353.28" r="256" class="fill-base-content" />
+					<circle
+						cx="512"
+						cy="353.28"
+						r="261"
+						stroke="black"
+						stroke-opacity="0.2"
+						stroke-width="10" />
+					<circle cx="512" cy="353.28" r="114.688" class="fill-base-200" />
+				</svg>
+				<h1 class="text-lg font-bold">Sign up a new account</h1>
+			</div>
+			<!-- /logo -->
+        <main class="grid bg-base-100 lg:aspect-[2/1] lg:grid-cols-2">
+            <!-- image ... -->
+        <figure class="pointer-events-none bg-base-300 object-cover max-lg:hidden">
+					<img src="https://picsum.photos/id/283/1200/1200" alt="Login" class="h-full" />
+        </figure>
+
+            <!-- Sign-up Form -->
+            <form class="flex flex-col justify-center gap-4 px-10 py-10 lg:px-16"
+                  method="post"
+                  action="{% url 'account_signup' %}">
+
+                {% csrf_token %}
+
+                <!-- Email Field -->
+                <div class="form-control">
+                    <label class="label" for="id_email"><span class="label-text">Email</span></label>
+                    <input type="email"
+                           id="id_email"
+                           name="email"
+                           placeholder="email"
+                           class="input input-bordered {% if form.email.errors %}input-warning{% else %}input-success{% endif %}"
+                           required />
+                        {% if form.email.errors %}
+                            <span class="error-message">{{ form.email.errors.as_text }}</span>
+                        {% endif %}
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-control">
+                    <label class="label" for="id_password1"><span class="label-text">Password</span></label>
+                    <input type="password"
+                           id="id_password1"
+                           name="password1"
+                           placeholder="password"
+                           class="input input-bordered {% if form.password.errors %}input-warning{% else %}input-success{% endif %}"
+                           required
+                           minlength="6" />
+                        {% if form.password1.errors %}
+                            <span class="error-message">{{ form.password1.errors.as_text }}</span>
+                        {% endif %}
+                </div>
+
+                <!-- Password Confirmation Field -->
+                <div class="form-control">
+                    <label class="label" for="id_password2"><span class="label-text">Confirm Password</span></label>
+                    <input type="password"
+                           id="id_password2"
+                           name="password2"
+                           placeholder="confirm password"
+                           class="input input-bordered {% if form.password.errors %}input-warning{% else %}input-success{% endif %}"
+                           required
+                           minlength="6" />
+                        {% if form.password2.errors %}
+                            <span class="error-message">{{ form.password2.errors.as_text }}</span>
+                        {% endif %}
+                </div>
+
+                <!-- Submit Button -->
+                <button class="btn btn-neutral" type="submit">Sign Up</button>
+
+                <!-- Other content ... -->
+
+            </form>
+        </main>
+    </div>
+</div>
+{% endblock content %}

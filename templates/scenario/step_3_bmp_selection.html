@@ -1,0 +1,21 @@
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+
+{% block content %}
+<div id="content_step">
+  <!-- Content for Step 3 -->
+
+    <div class="flex justify-between">
+        {% if current_step > 1 %}
+            <button hx-get="{% url 'step2' %}" hx-target="#content_step" hx-swap="outerHtml"  onclick="storeInputValues(); updateStepIndicator({{ previous_step }})" class="btn">Previous</button>
+        {% endif %}
+        {% if current_step < 6 %}
+            <button hx-get="{% url 'step4' %}" hx-target="#content_step" hx-swap="outerHTML" onclick="storeInputValues(); updateStepIndicator({{ next_step }})" class="btn">Next</button>
+        {% endif %}
+    </div>
+</div>
+
+
+{% endblock %}
+

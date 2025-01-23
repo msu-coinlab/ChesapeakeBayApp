@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load render_table from django_tables2 %}
+{% block head %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<!-- Include jQuery first -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Then include Select2 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+{% endblock %}
+{% block content %}
+
+
+<form id="myForm" method="post">
+    {% csrf_token %}
+    {{ form|crispy}}
+    <button type="submit">Submit</button>
+</form>
+    {% render_table table %}
+
+{% endblock content %}
+
+{% block scripts %}
+
+<script>
+    $(document).ready(function() {
+        function loadCostAndUnit() {
+            var bmpId = $('#id_bmp').val();
+            var stateId = $('#id_state').val();
+            if (bmpId && stateId) {
+                $.ajax({
+                    url: '/ajax_view/',
+                    data: {
+                        'bmp': bmpId,
+                        'state': stateId
+                    },
+                    success: function(data) {
+                        $('#id_cost').val(data.cost);
+                        $('#id_unit').val(data.unit);
+                    }
+                });
+            }
+        }
+
+        $('#id_bmp, #id_state').change(loadCostAndUnit);
+        $('#id_bmp, #id_state').select2();
+    });
+</script>
+
+{% endblock scripts %}

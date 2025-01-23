@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% block content %}
+
+
+
+    <div class="text-2xl font-bold">Create BMP Cost</div>
+    <div class="py-6 mb-6">
+    <form method="post" hx-post="{% url 'create_bmp_cost' %}" hx-target="#cost-table" hx-swap="outerHTML">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit">Save</button>
+    </form>
+
+        </div>
+
+    <div id="cost-table">
+        {% include 'core/bmp_cost/partials/cost_table.html' %}
+    </div>
+{% endblock %}

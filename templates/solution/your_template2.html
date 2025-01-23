@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div x-data="scatterPlotApp()" x-init="initPlot()">
+    <div>
+        <select x-on:change="changeView($event.target.value)">
+            <option value="normal-view">Normal View</option>
+            <option value="random">Random</option>
+        </select>
+    </div>
+
+    <div id="plot"></div> <!-- Plotly plot will be rendered here -->
+    <table id="infoTable" class="display" style="width:100%">
+        <!-- Table will be filled dynamically -->
+    </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+function scatterPlotApp() {
+    return {
+        dataPoints: JSON.parse('{{ data_points|safe }}'), // Your initial data points
+        selectedIndex: null, // Track the selected point's index
+        initPlot: function() {
+            this.plotData(this.dataPoints);
+        },
+        plotData: function(data) {
+            const component = this; // Capture `this` to use inside nested functions
+
+            // Prepare colors array, defaulting to blue, but red for the selected point
+            let colors = data.map(() => 'blue');
+            if (this.selectedIndex !== null) {
+                colors[this.selectedIndex] = 'red'; // Change color of the selected point
+            }
+
+            const trace = {
+                x: data.map(point => point.x),
+                y: data.map(point => point.y),
+                mode: 'markers',
+                type: 'scatter',
+                text: data.map(point => point.name),
+                marker: { size: 12, color: colors }, // Use the colors array here
+            };
+
+            const layout = {
+                hovermode: 'closest',
+                title: 'Scatter Plot Example',
+            };
+
+            Plotly.newPlot('plot', [trace], layout);
+
+            document.getElementById('plot').on('plotly_click', function(data) {
+                const idx = data.points[0].pointIndex;
+                component.selectedIndex = idx; // Update the selected index
+                const point = component.dataPoints[idx];
+                component.updateDetailsTable(point); // Update the details table
+                component.plotData(component.dataPoints); // Replot to update color
+            });
+        },
+        updateDetailsTable: function(point) {
+            const infoTable = document.getElementById('infoTable');
+            infoTable.innerHTML = `<tr><th>Name</th><td>${point.name}</td></tr>` +
+                                  `<tr><th>X Value</th><td>${point.x}</td></tr>` +
+                                  `<tr><th>Y Value</th><td>${point.y}</td></tr>` +
+                                  `<tr><th>Detail</th><td>${point.detail}</td></tr>`;
+        },
+        changeView: function(view) {
+            if (view === 'random') {
+                this.fetchRandomPoints();
+            } else {
+                this.selectedIndex = null; // Reset selection
+                this.initPlot(); // Re-initialize with original data
+            }
+        },
+        fetchRandomPoints: function() {
+            const component = this; // Capture `this` for use in fetch callback
+            fetch('/solution/htmx-random-points/')
+                .then(response => response.json())
+                .then(data => {
+                    component.dataPoints = data; // Update dataPoints with fetched random data
+                    component.selectedIndex = null; // Reset selection as data has changed
+                    component.plotData(component.dataPoints); // Replot with new data
+                });
+        },
+    };
+}
+</script>
+{% endblock %}

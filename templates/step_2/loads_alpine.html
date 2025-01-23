@@ -1,0 +1,492 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+
+
+{{ total_nitrogen|json_script:"total-nitrogen" }}
+{{ nitrogen|floatformat:2|json_script:"nitrogen" }}
+{{ nitrogen_pct|json_script:"nitrogen-pct" }}
+
+{{ total_phosphorus|json_script:"total-phosphorus" }}
+{{ phosphorus|floatformat:2|json_script:"phosphorus" }}
+{{ phosphorus_pct|json_script:"phosphorus-pct" }}
+
+{{ total_sediments|json_script:"total-sediments" }}
+{{ sediments|floatformat:2|json_script:"sediments" }}
+{{ sediments_pct|json_script:"sediments-pct" }}
+
+{{ total_oxygen|json_script:"total-oxygen" }}
+{{ oxygen|floatformat:2|json_script:"oxygen" }}
+{{ oxygen_pct|json_script:"oxygen-pct" }}
+
+{{ selected_pollutant|json_script:"selected-pollutant" }}
+{{ selected_reduction_target|json_script:"selected-reduction-target" }}
+
+{{ total_budget|json_script:"total-budget" }}
+{{ have_budget|json_script:"have-budget" }}
+
+
+<div class="container mx-auto p-4" x-data="acresCalculator()">
+
+    <div class="flex justify-center py-2"> 
+        <ul class="steps"> 
+          <li class="step step-primary">
+            <a href="{% url 'step_2' scenario_id %}">
+                Loads</a></li>
+          <li class="step">
+            <a href="{% url 'step_3' scenario_id %}">
+                BMP Selection</a></li>
+          {% if manure_transport_bmps %}
+            <li class="step">
+              <a href="{% url 'step_3_5' scenario_id %}">
+                  County Selection for Manure</a>
+            </li>
+          {% endif %}
+        </ul>
+        </ul>
+    </div>
+    
+    <div class="stats shadow w-full mb-5">
+    <div class="stat">
+        <div class="stat-title">Wastewater Dataset</div>
+        <div class="stat-value text-lg">{{ scenario_info }}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">Selected Counties</div>
+        <div class="stat-value text-lg">{{ counties }}</div>
+    </div>
+    </div>
+
+    <div class="flex justify-center py-3 mb-2"> 
+    <h1 class="text-3xl font-bold">Pollution Load and Implementation Cost Specification</h1>
+    </div>
+    <label for="mySelect" class="py-3 px-3 mb-4 font-bold">Pollution Reduction Target:</label>
+
+    <select id="selectedReductionTargetId" x-model="selectedReductionTarget" 
+            class="select select-bordered w-full max-w-xs" 
+            @change="updateAll" 
+            hx-target="#someElementId"
+            hx-post="{% url 'update_scenario_loads' %}"
+            hx-vals='javascript:{
+                "new_value": document.getElementById("selectedReductionTargetId").value, 
+                "scenario_id": {{ scenario_id }}, 
+                "field_name": "selected_reduction_target"
+            }'>
+        <option value="0">Edge of Stream</option>
+        <option value="1">Edge of River</option>
+        <option value="2">Edge of Tide</option>
+    </select>
+
+    <div x-show="false" id="someElementId">
+        <!-- This part of the page will be updated with the server response -->
+    </div>
+
+    <table class="table w-full text-lg shadow-md" id="bmp_summary_table">
+        <thead>
+            <tr class="h-12 text-lg border-b-0">
+                <th rowspan="2" class="border-b-0"></th> <!-- rowspan for spanning two rows -->
+                <th rowspan="2" class="border-b-0">Pollutant</th>
+                <th class="border-b-0">Initial Load (lbs/year)</th>
+                <th class="border-b-0">Removal Percentage (%)</th>
+                <th class="border-b-0">Expected Load (lbs/year)</th>
+            </tr>
+            <!-- <tr class="text-sm text-center">
+                <th>(lbs/year)</th>
+                <th>(%)</th>
+                <th>(lbs/year)</th>
+            </tr> -->
+        </thead>
+        <tbody>
+            <tr class="h-12" x-data="{ enabled: false}">
+            <td>
+              <input type="checkbox" 
+                  value="nitrogen"
+                  id="checkbox_nitrogen_id"
+                  name="checkbox_nitrogen" 
+                  x-bind:checked="selected_pollutant.includes('nitrogen')"
+                  x-on:change="updateSelectedPollutant('nitrogen', $event.target.checked)" 
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="change"
+                  hx-vals='js:{"new_value": acresCalculator().getSelectedPollutantsJSON() , "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                  >
+            </td>
+            <td class="text-left">Nitrogen</td>
+            <td class="text-left"><div x-text="formatNumberWithCommas(total_nitrogen[selectedReductionTarget])"></div></td>
+
+            <td>
+                <div class="flex items-center">
+                    <input class="input input-bordered"
+                      :disabled="!selected_pollutant.includes('nitrogen')"
+                      type="number" 
+                      x-model="nitrogen_pct" 
+                      x-on:input="updateNitrogen"
+                      hx-post="{% url 'update_scenario_loads' %}"
+                      hx-trigger="input delay:3s"
+                      hx-vals='javascript:{"new_value": document.getElementById("nitrogen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "nitrogen_pct"}'
+                      id="nitrogen_pct_id"
+                      name="nitrogen_pct_name"
+                      >
+                </div>
+            </td>
+
+            <td class="text-left"><div x-text="formatNumberWithCommas(parseFloat(nitrogen))"></div></td>
+            
+            <!-- <td>
+                <input class="input input-bordered" 
+                  :disabled="!selected_pollutant.includes('nitrogen')"
+                  x-model="nitrogen" 
+                  x-on:input="updateNitrogenPct"
+                  type="text"
+                  x-bind:value="formatNumberWithCommas(parseFloat(nitrogen))"
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="input delay:3s"
+                  hx-vals='javascript:{"new_value": document.getElementById("nitrogen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "nitrogen_pct"}'
+                  id="nitrogen_id"
+                  name="nitrogen_name"
+                  >
+            </td> -->
+          </tr>
+          <tr class="h-12" x-data="{ enabled: false }">
+            <td>
+              <input type="checkbox" 
+                  value="phosphorus" 
+                  id="checkbox_phosphorus_id"
+                  name="checkbox_phosphorus" 
+                  x-bind:checked="selected_pollutant.includes('phosphorus')"
+                  x-on:change="updateSelectedPollutant('phosphorus', $event.target.checked)" 
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="change"
+                  hx-vals='js:{"new_value": acresCalculator().getSelectedPollutantsJSON() , "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                  >
+            </td>
+            <td class="text-left">Phosphorus</td>
+            <td class="text-left"><div x-text="formatNumberWithCommas(total_phosphorus[selectedReductionTarget])"></div></td>
+            <td>
+          
+              <input class="input input-bordered" 
+                  :disabled="!selected_pollutant.includes('phosphorus')"
+                  type="number" 
+                  x-model="phosphorus_pct" 
+                  x-on:input="updatePhosphorus"
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="input delay:3s"
+                  hx-vals='javascript:{"new_value": document.getElementById("phosphorus_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "phosphorus_pct"}'
+                  id="phosphorus_pct_id"
+                  name="phosphorus_pct_name"
+                  >
+            </td>
+            <td class="text-left"><div x-text="formatNumberWithCommas(parseFloat(phosphorus))"></div></td>
+            <!-- <td>
+                <input class="input input-bordered" 
+                  :disabled="!selected_pollutant.includes('phosphorus')"
+                  x-model="phosphorus" 
+                  x-on:input="updatePhosphorusPct"
+                  type="text"
+                  x-bind:value="formatNumberWithCommas(parseFloat(phosphorus))"
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="input delay:3s"
+                  hx-vals='javascript:{"new_value": document.getElementById("phosphorus_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "phosphorus_pct"}'
+                  id="phosphorus_id"
+                  name="phosphorus_name"
+                  >
+            </td> -->
+          </tr>
+          <tr class="h-12" x-data="{ enabled: false }">
+            <td>
+              
+              <input type="checkbox" 
+                  value="sediments"
+                  id="checkbox_sediments_id" 
+                  name="checkbox_sediments" 
+                  x-bind:checked="selected_pollutant.includes('sediments')"
+                  x-on:change="updateSelectedPollutant('sediments', $event.target.checked)" 
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="change"
+                  hx-vals='js:{"new_value": acresCalculator().getSelectedPollutantsJSON() , "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                  >
+            </td>
+            <td class="text-left">Sediments</td>
+            <td class="text-left"><div x-text="formatNumberWithCommas(total_sediments[selectedReductionTarget])"></div></td>
+            <td>
+          
+              <input class="input input-bordered" 
+                  :disabled="!selected_pollutant.includes('sediments')"
+                  type="number" 
+                  x-model="sediments_pct" 
+                  x-on:input="updateSediments"
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="input delay:3s"
+                  hx-vals='javascript:{"new_value": document.getElementById("sediments_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "sediments_pct"}'
+                  id="sediments_pct_id"
+                  name="sediments_pct_name"
+                  >
+            </td>
+            <td class="text-left"><div x-text="formatNumberWithCommas(parseFloat(sediments))"></div></td>
+            <!-- <td>
+                <input class="input input-bordered"
+                  :disabled="!selected_pollutant.includes('sediments')"
+                  type="number" 
+                  x-model="sediments" 
+                  x-on:input="updateSedimentsPct"
+                  type="text"
+                  x-bind:value="formatNumberWithCommas(parseFloat(sediments))"
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="input delay:3s"
+                  hx-vals='javascript:{"new_value": document.getElementById("sediments_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "sediments_pct"}'
+                  id="sediments_id"
+                  name="sediments_name"
+                  >
+            </td> -->
+          </tr>
+          <tr class="h-12" x-data="{ enabled: false }">
+            <td>
+              <input type="checkbox" 
+                  value="oxygen" 
+                  id="checkbox_oxygen_id" 
+                  name="checkbox_oxygen" 
+                  x-bind:checked="selected_pollutant.includes('oxygen')"
+                  x-on:change="updateSelectedPollutant('oxygen', $event.target.checked)" 
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="change" 
+                  hx-vals='js:{"new_value": acresCalculator().getSelectedPollutantsJSON() , "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                  >
+            </td>
+            <td class="text-left">Oxygen Units (ug/l)</td>
+            <td class="text-left"><div x-text="formatNumberWithCommas(total_oxygen[selectedReductionTarget])"></div></td>
+            <td>
+              <input class="input input-bordered" 
+                  :disabled="!selected_pollutant.includes('oxygen')"
+
+                  type="number" 
+                  x-model="oxygen_pct" 
+                  x-on:input="updateOxygen"
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="input delay:3s"
+                  hx-vals='javascript:{"new_value": document.getElementById("oxygen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "oxygen_pct"}'
+                  id="oxygen_pct_id"
+                  name="oxygen_pct_name"
+                  >
+            </td>
+            <td class="text-left"><div x-text="formatNumberWithCommas(parseFloat(oxygen))"></div></td>
+            <!-- <td>
+                <input class="input input-bordered"
+                  :disabled="!selected_pollutant.includes('oxygen')"
+                  type="number" 
+                  x-model="oxygen" 
+                  x-on:input="updateOxygenPct"
+                  type="text"
+                  x-bind:value="formatNumberWithCommas(parseFloat(oxygen))"
+                  hx-post="{% url 'update_scenario_loads' %}"
+                  hx-trigger="input delay:3s"
+                  hx-vals='javascript:{"new_value": document.getElementById("oxygen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "oxygen_pct"}'
+                  id="oxygen_id"
+                  name="oxygen_name"
+                  >
+            </td> -->
+          </tr>
+        </tbody>
+    </table>
+
+
+<div x-data="{ showInput: total_budget> 0, total_budget: {{ total_budget|default:'0' }} }" class="flex items-center mb-3 text-lg">
+    <div class="flex-1">
+        <label class="flex-1">Do you have a limit on the allocated budget for BMP implementation?:</label>
+        
+        <!-- Radio buttons for Yes/No -->
+        <label>
+            <input type="radio" x-model="showInput" class="radio radio-primary mr-2" 
+                   x-bind:value="true" 
+                   @change="showInput=true; updateTotalBudget(showInput, $refs.totalBudgetInput)"> Yes
+        </label>
+        <label>
+            <input type="radio" x-model="showInput" class="radio radio-primary mr-2" 
+                   x-bind:value="false" 
+                   @change="showInput=false;updateTotalBudget(showInput, $refs.totalBudgetInput)"> No
+        </label>
+    </div>
+
+    <!-- Input field, shown only when showInput is true -->
+    <div x-show="showInput" class="flex-2 py-3">
+        <label>$</label>
+        <input x-ref="totalBudgetInput" class="input input-bordered bg-white shadow-md" 
+               id="total_budget_id" 
+               type="number" 
+               x-model="total_budget"
+               hx-post="{% url 'update_scenario_loads' %}"
+               hx-trigger="input delay:1s"
+               hx-vals='javascript:{"new_value": document.getElementById("total_budget_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "total_budget"}'
+        />
+    </div>
+    <div id="content_step" class="space-y-6 py-8">
+        <div class="flex justify-end py-6" >
+            <a :href="!showInput||showInput && total_budget > 0 ? '{% url 'step_3' scenario_id %}' : '#'" 
+               :class="{'btn-primary': (showInput && total_budget > 0) || !showInput, 'btn-disabled': showInput && total_budget <= 0}" 
+               class="btn">Next</a>
+        </div>
+    </div>
+</div>
+</div>
+
+
+<script>
+    function acresCalculator() {
+        return {
+            total_nitrogen: [],
+            nitrogen: null,
+            nitrogen_pct: null,
+            total_phosphorus: [],
+            phosphorus: null,
+            phosphorus_pct: null,
+            total_sediments: [],
+            sediments: null,
+            sediments_pct: null,
+            total_oxygen: [],
+            oxygen: null,
+            oxygen_pct: null,
+            selected_pollutant: [],
+            selectedReductionTarget: null,
+            total_budget: null,
+            have_budget: null,
+            init() {
+                this.total_nitrogen = JSON.parse(document.getElementById('total-nitrogen').textContent);
+                this.nitrogen_pct = JSON.parse(document.getElementById('nitrogen-pct').textContent);
+                this.nitrogen_pct = parseFloat(this.nitrogen_pct).toFixed(0);
+                this.nitrogen = JSON.parse(document.getElementById('nitrogen').textContent);
+                this.nitrogen = parseFloat(this.nitrogen).toFixed(0);
+
+                this.total_phosphorus = JSON.parse(document.getElementById('total-phosphorus').textContent);
+                this.phosphorus_pct = JSON.parse(document.getElementById('phosphorus-pct').textContent);
+                this.phosphorus_pct = parseFloat(this.phosphorus_pct).toFixed(0);
+                this.phosphorus = JSON.parse(document.getElementById('phosphorus').textContent);
+                this.phosphorus = parseFloat(this.phosphorus).toFixed(0);
+
+
+
+                this.total_sediments = JSON.parse(document.getElementById('total-sediments').textContent);
+                this.sediments_pct = JSON.parse(document.getElementById('sediments-pct').textContent);
+                this.sediments_pct = parseFloat(this.sediments_pct).toFixed(0);
+                this.sediments = JSON.parse(document.getElementById('sediments').textContent);
+                this.sediments = parseFloat(this.sediments).toFixed(0);
+
+
+
+                this.total_oxygen = JSON.parse(document.getElementById('total-oxygen').textContent);
+
+                console.log("Init");
+                this.oxygen_pct = JSON.parse(document.getElementById('oxygen-pct').textContent);
+                this.oxygen_pct = parseFloat(this.oxygen_pct).toFixed(0);
+                this.oxygen = JSON.parse(document.getElementById('oxygen').textContent);
+                this.oxygen = parseFloat(this.oxygen).toFixed(0);
+                this.selected_pollutant = JSON.parse(document.getElementById('selected-pollutant').textContent);
+
+                console.log(this.selected_pollutant);
+                this.total_budget = JSON.parse(document.getElementById('total-budget').textContent);
+                this.total_budget = parseFloat(this.total_budget).toFixed(0);
+                this.have_budget = JSON.parse(document.getElementById('have-budget').textContent);
+                this.total_budget = parseFloat(this.total_budget).toFixed(0);
+
+                this.selectedReductionTarget = JSON.parse(document.getElementById('selected-reduction-target').textContent);
+                //this.selectedReductionTarget = parseInt(this.selectedReductionTarget);
+            },
+            updateNitrogen() {
+                let value = ((100-this.nitrogen_pct) * this.total_nitrogen[this.selectedReductionTarget]) / 100;
+                this.nitrogen = value.toFixed(0);
+            },
+            updateNitrogenPct() {
+                this.nitrogen_pct = (100-(this.nitrogen / this.total_nitrogen[this.selectedReductionTarget]) * 100).toFixed(0);
+            },
+            updatePhosphorus() {
+                let value = ((100-this.phosphorus_pct) * this.total_phosphorus[this.selectedReductionTarget]) / 100;
+                this.phosphorus = value.toFixed(0);
+            },
+            updatePhosphorusPct() {
+                this.phosphorus_pct = (100-(this.phosphorus / this.total_phosphorus[this.selectedReductionTarget]) * 100).toFixed(0);
+            },
+            updateSediments() {
+                let value = ((100-this.sediments_pct) * this.total_sediments[this.selectedReductionTarget]) / 100;
+                this.sediments = value.toFixed(0);
+            },
+            updateSedimentsPct() {
+                this.sediments_pct = (100-(this.sediments / this.total_sediments[this.selectedReductionTarget]) * 100).toFixed(0);
+            },
+            updateOxygen() {
+                let value = ((100-this.oxygen_pct) * this.total_oxygen[this.selectedReductionTarget]) / 100;
+                this.oxygen = value.toFixed(0);
+            },
+            updateOxygenPct() {
+                this.oxygen_pct = (100-(this.oxygen / this.total_oxygen[this.selectedReductionTarget]) * 100).toFixed(0);
+            },
+            updateAll() {
+                this.updateNitrogen();
+                this.updatePhosphorus();
+                this.updateSediments();
+                this.updateOxygen();
+            },
+            updateSelectedPollutant(pollutant, isChecked) {
+
+                if (!isChecked) {
+                    // Check if at least one checkbox is still checked
+                    const anyChecked = ['nitrogen', 'phosphorus', 'sediments', 'oxygen'].some(pollutant => {
+                        return document.getElementById('checkbox_' + pollutant + '_id').checked;
+                    });
+            
+                    if (!anyChecked) {
+                        alert("At least one option must be selected.");
+                        document.getElementById('checkbox_' + pollutant + '_id').checked = true;
+                        return;
+                    }
+                }
+                //this.selected_pollutant = [];
+                if(this.selected_pollutant.includes(pollutant) && !isChecked) {
+                    this.selected_pollutant = this.selected_pollutant.filter(item => item !== pollutant);
+                }
+                else if (!this.selected_pollutant.includes(pollutant) && isChecked) {
+                    this.selected_pollutant.push(pollutant);
+                }
+                if (["nitrogen", "phosphorus", "sediments"].includes(pollutant) && isChecked) {
+                    //uncheck checkbox_oxygen_id
+                    this.selected_pollutant = this.selected_pollutant.filter(item => item !== "oxygen");
+                    document.getElementById('checkbox_oxygen_id').checked = false;
+                }
+                else if (pollutant == "oxygen" && isChecked) {
+                    //uncheck checkbox_oxygen_id
+                    this.selected_pollutant = ["oxygen"]; 
+                    document.getElementById('checkbox_nitrogen_id').checked = false;
+                    document.getElementById('checkbox_phosphorus_id').checked = false;
+                    document.getElementById('checkbox_sediments_id').checked = false;
+                }
+            },
+            getSelectedPollutantsJSON() {
+                const pollutants = ['nitrogen', 'phosphorus', 'sediments', 'oxygen'];
+                this.selected_pollutant = [];
+            
+                pollutants.forEach(pollutant => {
+                    if (document.getElementById(`checkbox_${pollutant}_id`).checked) {
+                        this.selected_pollutant.push(pollutant);
+                    }
+                });
+                return JSON.stringify(this.selected_pollutant);
+            },
+
+            formatNumberWithCommas(x) {
+                if (isNaN(x)) return "0";
+                let parts = x.toFixed(0).toString().split(".");
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                return parts.join(".");
+            }
+           
+        };
+    }
+    function updateTotalBudget(showInput, totalBudgetInput) {
+        if (!showInput) {
+            totalBudgetInput.value = 0;
+            totalBudgetInput.dispatchEvent(new Event('input'));
+        }
+    }
+</script>
+{% endblock %}
+

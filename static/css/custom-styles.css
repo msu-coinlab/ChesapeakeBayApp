@@ -1,0 +1,14 @@
+
+.steps .step::before {
+    height: .1rem; /* Adjust the height as needed */
+}
+.steps .step::after {
+    width: 3rem;  /* Adjust the width as needed */
+    height: 3rem; /* Adjust the height as needed */
+    border: 1px solid currentColor; /* Thickness and color of the circle border */
+    border-radius: 50%; /* Makes it circular */
+    margin: auto;       /* Centers the circle within the element */
+}
+.steps .step {
+    grid-template-rows: repeat(2, minmax(0,1fr));  /* Adjust the width as needed */
+}

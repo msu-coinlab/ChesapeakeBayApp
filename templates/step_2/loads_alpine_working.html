@@ -1,0 +1,82 @@
+
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+
+{{ total_acres|floatformat:2|json_script:"total-acres" }}
+{{ acres|json_script:"acres" }}
+{{ acres_pct|json_script:"acres-pct" }}
+
+<div class="container mx-auto p-4" x-data="acresCalculator()">
+    <div id="content_step" class="space-y-6 py-8">
+        <table class="table w-full text-lg shadow-md">
+            <tr class="h-12">
+                <td>Total Acres Allocated to BMPs: {{ total_acres|floatformat:2|intcomma }} acres</td>
+                <td>
+                    <input class="input input-bordered" 
+                    type="number" 
+                    x-model="acres_pct" 
+                    x-on:input="updateAcres"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("acres_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "acres_pct"}'
+                    id="acres_pct_id"
+                    name="acres_pct_name"
+                    >
+
+                    <span>%</span>
+                </td>
+                <td>
+                    <input class="input input-bordered" 
+                    type="number" 
+                    x-model="acres" 
+                    x-on:input="updatePercentage"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("acres_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "acres_pct"}'
+                    id="acres_id"
+                    name="acres_name"
+                    >
+                    <span>acres</span>
+
+                </td>
+            </tr>
+        </table>
+    
+        <div class="flex justify-between py-6" >
+                <a href="{% url 'step_1' scenario_id %}" class="btn btn-primary">Previous</a>
+                <a href="{% url 'step_3' scenario_id %}" class="btn btn-primary">Next</a>
+        </div>
+    </div>
+</div>
+<script>
+    function acresCalculator() {
+        return {
+            total_acres: null,
+            percentage: null,
+            acres: null,
+            init() {
+                this.total_acres = JSON.parse(document.getElementById('total-acres').textContent);
+                this.total_acres = parseFloat(this.total_acres).toFixed(2);
+                this.acres_pct = JSON.parse(document.getElementById('acres-pct').textContent);
+                this.acres_pct = parseFloat(this.acres_pct).toFixed(2);
+                this.acres = JSON.parse(document.getElementById('acres').textContent);
+                this.acres = parseFloat(this.acres).toFixed(2);
+            },
+            updateAcres() {
+                this.acres = ((this.acres_pct* this.total_acres) / 100).toFixed(2);
+                console.log('acres:', this.acres); // Add this line for debugging
+            },
+            updatePercentage() {
+                this.acres_pct = ((this.acres / this.total_acres) * 100).toFixed(2);
+            }
+        };
+    }
+</script>
+{% endblock %}
+
+

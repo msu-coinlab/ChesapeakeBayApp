@@ -1,0 +1,225 @@
+services:
+  # Web service with build configuration
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chesapeake-app:latest  # Built image
+    command: >
+      sh -c "
+        ./wait-for-it.sh postgres:5432 -- 
+        ./wait-for-it.sh redis:6379 -- 
+        ./wait-for-it.sh rabbitmq:5672 -- 
+        ./docker-entrypoint.sh gunicorn cast.wsgi:application --bind 0.0.0.0:8000
+      "
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: on-failure
+    env_file:
+      - variables.env
+    environment:
+      - SERVICE_TYPE=web
+      - SECURE_SSL_REDIRECT=${SECURE_SSL_REDIRECT:-False}  # Override if needed
+    volumes:
+      - .:/app:delegated  # Consider limiting if not necessary for all services
+      - shared_nsga3_output:/opt/opt4cast/output/nsga3/  # Shared Volume
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Alfred Retrieve Service
+  alfred_retrieve:
+    image: chesapeake-app:latest
+    command: ["/usr/local/bin/alfred", "retrieve"]
+    restart: always
+    env_file:
+      - variables.env
+    environment:
+      - SERVICE_TYPE=alfred_retrieve
+    depends_on:
+      - web
+      - redis
+      - rabbitmq
+    volumes:
+      - .:/app:delegated
+      - shared_nsga3_output:/opt/opt4cast/output/nsga3/  # Shared Volume
+    networks:
+      - app-network
+
+  # Alfred Send Service
+  alfred_send:
+    image: chesapeake-app:latest
+    command: ["/usr/local/bin/alfred", "send"]
+    restart: always
+    env_file:
+      - variables.env
+    environment:
+      - SERVICE_TYPE=alfred_send
+    depends_on:
+      - web
+      - redis
+      - rabbitmq
+    volumes:
+      - .:/app:delegated
+      - shared_nsga3_output:/opt/opt4cast/output/nsga3/  # Shared Volume
+    networks:
+      - app-network
+
+  # Celery Worker Service
+  celery:
+    image: chesapeake-app:latest
+    command: >
+      sh -c "
+        ./wait-for-it.sh web:8000 -- 
+        celery -A cast worker --loglevel=info
+      "
+    depends_on:
+      - redis
+      - rabbitmq
+      - web
+    restart: on-failure
+    env_file:
+      - variables.env
+    environment:
+      - SERVICE_TYPE=celery
+    volumes:
+      - .:/app:delegated
+      - shared_nsga3_output:/opt/opt4cast/output/nsga3/  # Shared Volume
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "celery", "-A", "cast", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Celery Beat Service
+  celery-beat:
+    image: chesapeake-app:latest
+    command: >
+      sh -c "
+        ./wait-for-it.sh web:8000 -- 
+        celery -A cast beat --loglevel=info
+      "
+    depends_on:
+      - redis
+      - rabbitmq
+      - web
+    restart: on-failure
+    env_file:
+      - variables.env
+    environment:
+      - SERVICE_TYPE=celery-beat
+    volumes:
+      - .:/app:delegated
+      - shared_nsga3_output:/opt/opt4cast/output/nsga3/  # Shared Volume
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "celery", "-A", "cast", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Flower Service for monitoring Celery
+  flower:
+    image: chesapeake-app:latest
+    command: >
+      sh -c "
+        ./wait-for-it.sh web:8000 -- 
+        celery -A cast flower --loglevel=info
+      "
+    depends_on:
+      - rabbitmq
+      - web
+      - redis
+      - celery
+    restart: on-failure
+    env_file:
+      - variables.env
+    environment:
+      - SERVICE_TYPE=flower
+      - DEBUG=1
+      - CELERY_BROKER=redis://redis:6379/1
+      - CELERY_BACKEND=redis://redis:6379/1
+        #ports:
+        # - "5555:5555"
+    volumes:
+      - .:/app:delegated
+      - shared_nsga3_output:/opt/opt4cast/output/nsga3/  # Shared Volume
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Postgres Database
+  postgres:
+    image: postgres:14.5
+    restart: always
+    volumes:
+      - mypostgresdata:/var/lib/postgresql/data
+    env_file:
+      - variables.env
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    #ports:
+    #  - "15675:15672"  # Management UI port
+    restart: always
+    env_file:
+      - variables.env
+    volumes:
+      - myrabbitmqdata:/var/lib/rabbitmq
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmqctl status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis In-Memory Data Store
+  redis:
+    image: redis:7.0-alpine
+    restart: always
+    env_file:
+      - variables.env
+    volumes:
+      - myredisdata:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  mypostgresdata:
+  myredisdata:
+  myrabbitmqdata:
+  shared_nsga3_output:  # Define the shared named volume
+    driver: local  # Optional: Specify the driver if needed
+
+networks:
+  app-network:
+    driver: bridge

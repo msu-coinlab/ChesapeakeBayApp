@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Group name: {{emailgroup.title}}</h5>
+        <h5 class="card-title">Users:</h5>
+        {% for user in users %}
+          <p class="card-text">{{user.first_name}} {{ user.last_name }}  &lt;{{ user.email }}&gt; </p>
+        {% endfor %}
+    </div>
+  </div>
+
+{% endblock %}

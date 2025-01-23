@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+{% block content %}
+
+    <div class="container">
+        <div class="px-5 my-5 text-center">
+            <h1 class="text-4xl font-bold text-primary">
+                {{ page_title }}
+            </h1>
+            <p></p>
+        </div>
+
+<div x-data="{ currentTab: 'tab1' }">
+    <div role="tablist" class="tabs tabs-boxed">
+        <a role="tab" class="tab" :class="{ 'tab-active': currentTab === 'tab1' }" @click.prevent="currentTab = 'tab1'">Efficiency and Land Conversion BMPs</a>
+        <a role="tab" class="tab" :class="{ 'tab-active': currentTab === 'tab2' }" @click.prevent="currentTab = 'tab2'">Animal BMPs</a>
+        <a role="tab" class="tab" :class="{ 'tab-active': currentTab === 'tab3' }" @click.prevent="currentTab = 'tab3'">Manure Transport BMPs</a>
+    </div>
+
+    <!-- Table Containers -->
+    <div x-show="currentTab === 'tab1'">
+        {% render_table table %}
+    </div>
+    <div x-show="currentTab === 'tab2'" style="display: none;">
+        {% render_table table2 %}
+    </div>
+    <div x-show="currentTab === 'tab3'" style="display: none;">
+    </div>
+</div>
+
+        {% if create_url %}
+            <a href="{{ create_url }}" class="btn btn-primary">
+                {{ create_title }}
+            </a>
+        {% endif %}
+
+        <div class="px-5 my-5 text-right">
+            <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-secondary btn-sm">
+                <i class="material-icons">arrow_back</i>
+            </a>
+        </div>
+
+    </div>
+
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+$(document).ready(function() {
+    $('.my-table-efficiency, .my-table-animal').DataTable({
+        "pagingType": "simple_numbers", // Example customization
+        "searching": true, // Enable the search box
+        "ordering": true, // Enable column ordering
+        "autoWidth": false, // Disable the autoWidth feature
+        "pageLength": 25,
+    });
+});
+</script>
+{% endblock %}

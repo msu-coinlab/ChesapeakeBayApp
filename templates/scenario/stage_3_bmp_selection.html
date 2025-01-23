@@ -1,0 +1,165 @@
+
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+
+<div class="container mx-auto p-4">
+
+    <div class="flex justify-end mb-4">
+        <a href="{% url 'optimization' scenario_id %}" class="btn bg-green-600 hover:bg-green-800 text-white">Optimize</a>
+    </div>
+    <div class="py-6 mb-6"> 
+        <ul class="steps"> 
+          <li class="step">Info</li>
+          <li class="step">Loads</li>
+          <li class="step step-primary">BMP Selection</li>
+          <li class="step">Update Costs</li>
+          <li class="step">BMP Constraint</li>
+          <li class="step">BMP Constraint Advanced</li>
+        </ul>
+        
+    </div>
+    
+    <h1 class="text-3xl font-bold">BMP Selection</h1>
+    
+    
+    <form action="#" enctype="multipart/form-data" method="post">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-5">
+                <h5 class="text-lg font-semibold">Available BMPs</h5>
+                <select id="source-select" class="form-control w-full mt-2 h-96 shadow-md" size="80" multiple="multiple">
+                    {% for category, items in source_items.items %}
+                    <optgroup label="{{ category }}">
+                        {% for value, name in items %}
+                        <option value="{{ value }}">{{ name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-span-2 flex flex-col justify-center items-stretch space-y-2">
+                <button type="button" id="optgroup_rightAll" class="btn btn-secondary w-full text-black">
+                    <span class="material-icons">fast_forward</span>
+                </button>
+                
+                <button type="button" id="optgroup_rightSelected" class="btn btn-secondary w-full text-black shadow-md">
+                    <span class="material-icons">chevron_right</span>
+                </button>
+                
+                <button type="button" id="optgroup_leftSelected" class="btn btn-secondary w-full text-black shadow-md">
+                    <span class="material-icons">chevron_left</span>
+                </button>
+                
+                <button type="button" id="optgroup_leftAll" class="btn btn-secondary w-full text-black shadow-md">
+                    <span class="material-icons">fast_rewind</span>
+                </button>
+    
+                <a href="#" class="btn btn-secondary w-full shadow-md" onclick="save_bmps();">Save Selected BMPs</a>
+            </div>
+    
+            <div class="col-span-5">
+                <h5 class="text-lg font-semibold">Selected BMPs</h5>
+                <select id="target-select" class="form-select w-full mt-2 h-96 shadow-md" size="50" multiple>
+                    {% for category, items in target_items.items %}
+                    <optgroup label="{{ category }}">
+                        {% for value, name in items %}
+                        <option value="{{ value }}">{{ name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+    
+        <div class="flex justify-between py-6" >
+                <a href="{% url 'stage2' scenario_id %}" class="btn btn-primary">Previous</a>
+                <a href="{% url 'stage4' scenario_id %}" class="btn btn-primary">Next</a>
+        </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#optgroup_rightSelected').click(function() {
+            moveSelectedItems('#source-select', '#target-select');
+        });
+
+        $('#optgroup_leftSelected').click(function() {
+            moveSelectedItems('#target-select', '#source-select');
+        });
+        function moveSelectedItems(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' option:selected').each(function() {
+                var item = $(this);
+                var sourceOptgroup = item.closest('optgroup');
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '"></optgroup>').appendTo(targetSelectId);
+                }
+                
+                // Move the item to the appropriate category in the target select
+                item.appendTo(targetOptgroup);
+
+                // If the source optgroup has no more items, remove it
+                if (sourceOptgroup.children('option').length === 0) {
+                    sourceOptgroup.remove();
+                }
+            });
+        }
+        // Move all categories with items from source to target
+        $('#optgroup_rightAll').click(function() {
+            moveAllItemsWithCategories('#source-select', '#target-select');
+        });
+
+        // Move all categories with items from target to source
+        $('#optgroup_leftAll').click(function() {
+            moveAllItemsWithCategories('#target-select', '#source-select');
+        });
+
+        function moveAllItemsWithCategories(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' optgroup').each(function() {
+                var sourceOptgroup = $(this);
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '"></optgroup>').appendTo(targetSelectId);
+                }
+
+                // Move all items to the appropriate category in the target select
+                sourceOptgroup.children('option').appendTo(targetOptgroup);
+            });
+
+            // Clear the source select
+            $(sourceSelectId).empty();
+        }
+
+	$('#source-select').multiselect({
+		search: {
+            left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+            right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+        },
+        fireSearch: function(value) {
+            return value.length > 3;
+        },
+    });
+</script>
+{% endblock %}
+
+
+

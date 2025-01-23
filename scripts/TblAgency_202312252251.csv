@@ -1,0 +1,13 @@
+"AgencyId","AgencyCode","AgencyFullName","AgencyDescription","AgencyTypeId","GISAgencyId"
+1,ars,Agricultural Research Service,Principal in-house research agency of the U. S. Department of Agriculture,1,1
+2,dod,Department of Defense,The U.S. Defense Department manages an inventory of installations and facilities to keep Americans safe,1,6
+4,fedother,Other Federal Land,Includes any federal agencies not otherwise specified,1,10
+5,fs,US Forest Service,The U. S. Forest Service manages public lands in the form of national forests and grasslands,1,2
+6,fws,US Fish and Wildlife Service,"The U. S. Fish and Wildlife Service conserves, protects and enhances fish, wildlife, and plants and their habitats for the continuing benefit of the American people",1,5
+7,gsa,General Services Administration,The General Services Administration manages and supports the basic functioning of federal agencies,1,8
+8,nasa,National Aeronautics and Space Administration,National Aeronautics and Space Administration is responsible for the civilian space program as well as aeronautics and aerospace research,1,9
+9,nonfed,Non-Federal,Any land that is not federally owned and operated. All agricultural land is considered non-federal in the model,2,0
+10,nps,National Park Service,"The National Park Service manages all U.S. national parks, many American national monuments, and other conservation and historical properties with various title designations such as the White House",1,4
+11,si,Smithsonian Institution,The Smithsonian Institution is a group of museums and research centers administered by the U. S.,1,7
+13,state,MD State,Maryland urban land that is subject to restoration requirements under a Phase II MS4 permit owned by a Maryland state facility or agency.,2,13
+14,sha,MD State Highway Administration,Maryland urban land that is covered under the Maryland State Highway Administration's MS4 permit.,2,14

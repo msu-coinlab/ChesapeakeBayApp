@@ -1,0 +1,83 @@
+
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load render_table from django_tables2 %}
+
+{% block head %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+<!-- Include jQuery first -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Then include Select2 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<div class="container mx-auto p-4">
+
+    <div class="flex justify-end mb-4">
+        <a href="{% url 'optimization' scenario_id %}" class="btn bg-green-600 hover:bg-green-800 text-white">Optimize</a>
+    </div>
+    <div class="py-6 mb-6"> 
+        <ul class="steps"> 
+          <li class="step">Info</li>
+          <li class="step">Loads</li>
+          <li class="step">BMP Selection</li>
+          <li class="step step-primary" >Update Costs</li>
+          <li class="step">BMP Constraint</li>
+          <li class="step">BMP Constraint Advanced</li>
+        </ul>
+        
+    </div>
+    
+    <h1 class="text-3xl font-bold">Update Costs</h1>
+    
+
+    <form id="myForm" method="post" class="max-w-lg py-5">
+        {% csrf_token %}
+        {{ form|crispy}}
+        <button type="submit" class="btn btn-primary text-black">Submit</button>
+    </form>
+    <div class="shadow-md">
+        {% render_table table %}
+    </div>
+    
+        <div class="flex justify-between py-6" >
+                <a href="{% url 'stage3' scenario_id %}" class="btn btn-primary">Previous</a>
+                <a href="{% url 'stage5' scenario_id %}" class="btn btn-primary">Next</a>
+        </div>
+        </div>
+{% endblock content %}
+
+{% block scripts %}
+
+<script>
+    $(document).ready(function() {
+        function loadCostAndUnit() {
+            var bmpId = $('#id_bmp').val();
+            var stateId = $('#id_state').val();
+            if (bmpId && stateId) {
+                $.ajax({
+                    url: '/ajax_view/',
+                    data: {
+                        'bmp': bmpId,
+                        'state': stateId
+                    },
+                    success: function(data) {
+                        $('#id_cost').val(data.cost);
+                        $('#id_unit').val(data.unit);
+                    }
+                });
+            }
+        }
+
+        $('#id_bmp, #id_state').change(loadCostAndUnit);
+        $('#id_bmp, #id_state').select2();
+    });
+</script>
+
+{% endblock scripts %}

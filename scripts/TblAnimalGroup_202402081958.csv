@@ -1,0 +1,20 @@
+"AnimalGroupId","AnimalGroup","AnimalGroupDescription"
+1,pullets,pullets
+2,turkeys,turkeys
+3,hogs and pigs for breeding,hogs and pigs for breeding
+4,beef,beef
+5,broilers,broilers
+6,dairy,dairy
+7,hogs for slaughter,hogs for slaughter
+8,horses,horses
+9,layers,layers
+10,other cattle,other cattle
+11,sheep and lambs,sheep and lambs
+12,goats,goats
+17,poultry,"Includes the categories of pullets, turkeys, broilers, and layers."
+18,chickens,Includes the categories of pullets and broilers.
+19,swine,Includes the categories of hogs and pigs for breeding and hogs for slaughter.
+20,livestock,"Includes all animal types except for pullets, turkeys, broilers and layers."
+21,all animals,Includes all animal types.
+22,cattle,"Includes the categories of beef, dairy, and other cattle."
+23,non-dairy pastured animals,"Includes the categories of beef, other cattle, horses, goats and sheep."

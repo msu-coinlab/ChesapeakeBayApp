@@ -1,0 +1,242 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <div class="container">
+
+        <div class="px-5 my-5 text-center">
+            <h1 class="text-4xl font-bold text-primary">
+                {{ page_title }}
+            </h1>
+            <p></p>
+        </div>
+        <div class="container">
+            <div class="px-5 my-5">
+<form method="POST" enctype="multipart/form-data" x-data="{
+    copySelectionsToHiddenInputs() {
+        const form = this.$el;
+        const targetSelect = document.getElementById('target-select');
+        const selectedOptions = Array.from(targetSelect.options)
+                                      .map(option => option.value);
+
+        // Clear any existing inputs for 'geographic_areas'
+        const existingInputs = form.querySelectorAll('input[name=\'geographic_areas\']');
+        existingInputs.forEach(input => input.remove());
+
+        // Create and append a new hidden input for each selected option
+        selectedOptions.forEach(value => {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'geographic_areas';
+            hiddenInput.value = value;
+            form.appendChild(hiddenInput);
+        });
+
+        // Submit the form after a brief delay to ensure DOM updates are processed
+        setTimeout(() => {
+            form.submit();
+        }, 100); // Adjust this delay as necessary
+    }
+}" @submit.prevent="copySelectionsToHiddenInputs()">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        {{ form.name|as_crispy_field }}
+                    </div>
+                    
+                    <!-- Render 'scenario_info' field with custom class -->
+                    <div class="form-group">
+                        {{ form.scenario_info|as_crispy_field }}
+                    </div>
+    
+                    <!-- Render 'geographic_areas' hidden field -->
+                    <!-- This will render multiple hidden inputs if there are multiple values. -->
+                    {{ form.geographic_areas }}
+
+
+                    <div class="grid grid-cols-12 gap-4 py-3 mb-3">
+                        <div class="col-span-5" x-data="categoryColors()">
+                            <h5 class="text-lg font-semibold">Available Counties</h5>
+                            <select id="source-select" class="form-control w-full mt-2 h-96 shadow-md" size="80" multiple="multiple">
+                                {% for category, items in source_counties.items %}
+                                <optgroup label="{{ category }}" style="font-weight: bold;">
+                                    {% for value, name in items %}
+                                    <option value="{{ value }}" :style="'color: ' + getColor('{{ category }}')">{{ name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-span-2 flex flex-col justify-center items-stretch space-y-2">
+                            <button type="button" id="optgroup_rightAll" class="btn btn-secondary w-full text-black">
+                                <span class="material-icons">fast_forward</span>
+                            </button>
+                            
+                            <button type="button" id="optgroup_rightSelected" class="btn btn-secondary w-full text-black shadow-md">
+                                <span class="material-icons">chevron_right</span>
+                            </button>
+                            
+                            <button type="button" id="optgroup_leftSelected" class="btn btn-secondary w-full text-black shadow-md">
+                                <span class="material-icons">chevron_left</span>
+                            </button>
+                            
+                            <button type="button" id="optgroup_leftAll" class="btn btn-secondary w-full text-black shadow-md">
+                                <span class="material-icons">fast_rewind</span>
+                            </button>
+                
+            
+                        </div>
+                
+                        <div class="col-span-5" x-data="categoryColors()">
+                            <h5 class="text-lg font-semibold">Selected Counties</h5>
+                            <select id="target-select" class="form-control w-full mt-2 h-96 shadow-md" size="50" multiple="multiple">
+                                {% for category, items in target_counties.items %}
+                                <optgroup label="{{ category }}" style="font-weight: bold;">
+                                    {% for value, name in items %}
+                                    <option value="{{ value }}" :style="'color: ' + getColor('{{ category }}')">{{ name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-start">
+                        <a href="{{request.META.HTTP_REFERER|escape}}" class="btn btn-primary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" style="margin-left: 10px; background-color: #007bff; color: white;">{{ button_name }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <div class="px-5 my-5 text-right">
+            <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-secondary btn-sm">
+                <i class="material-icons">arrow_back</i>
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    window.getAllItemsWithCategories = function(selectId) {
+        var categories = [];
+        $(selectId + ' optgroup').each(function() {
+            var categoryLabel = $(this).attr('label');
+            var items = [];
+            $(this).find('option').each(function() {
+                items.push($(this).val());
+            });
+            categories.push({label: categoryLabel, items: items});
+        });
+        return categories;
+    }
+
+
+
+    $(document).ready(function() {
+	    $('#source-select, #target-select').multiselect({
+		    search: {
+                left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+            },
+            fireSearch: function(value) {
+                return value.length > 3;
+            },
+        });
+        function clearAndResetSearch() {
+            // Clear search fields
+            var searchInputs = $('input[type="text"][name="q"]');
+
+            searchInputs.val('').trigger('keyup'); // Adjust the event type if needed
+        };
+        $('#optgroup_rightSelected').click(function() {
+            clearAndResetSearch();
+            moveSelectedItems('#source-select', '#target-select');
+        });
+
+        $('#optgroup_leftSelected').click(function() {
+            clearAndResetSearch();
+            moveSelectedItems('#target-select', '#source-select');
+        });
+        function moveSelectedItems(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' option:selected').each(function() {
+                var item = $(this);
+                var sourceOptgroup = item.closest('optgroup');
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '" style="font-weight: bold;"></optgroup>').appendTo(targetSelectId);
+                }
+                
+                // Move the item to the appropriate category in the target select
+                item.appendTo(targetOptgroup);
+
+                // If the source optgroup has no more items, remove it
+                if (sourceOptgroup.children('option').length === 0) {
+                    sourceOptgroup.remove();
+                }
+
+                item.prop('selected', false);
+            });
+        }
+        // Move all categories with items from source to target
+        $('#optgroup_rightAll').click(function() {
+            clearAndResetSearch();
+            moveAllItemsWithCategories('#source-select', '#target-select');
+        });
+
+        // Move all categories with items from target to source
+        $('#optgroup_leftAll').click(function() {
+            clearAndResetSearch();
+            moveAllItemsWithCategories('#target-select', '#source-select');
+        });
+
+        function moveAllItemsWithCategories(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' optgroup').each(function() {
+                var sourceOptgroup = $(this);
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '" style="font-weight: bold;"></optgroup>').appendTo(targetSelectId);
+                }
+
+                // Move all items to the appropriate category in the target select
+                sourceOptgroup.children('option').appendTo(targetOptgroup);
+
+            });
+
+            // Clear the source select
+            $(sourceSelectId).empty();
+            $(targetSelectId).find('option').prop('selected', false);
+        };
+
+        $('#id_scenario_info').select2();
+    });
+ function categoryColors() {
+        return {
+            colors: {
+                'Delaware': 'brown',
+                'Maryland': 'olive',
+                'District of Columbia': 'blue',
+                'Pennsylvania': 'red',
+                'Virginia': 'purple',
+                'West Virginia': 'green',
+                'New York': 'gray',
+            },
+            getColor(category) {
+                return this.colors[category] || 'blue'; // Default to blue if category not found
+            }
+        };
+    }
+</script>
+{% endblock %}

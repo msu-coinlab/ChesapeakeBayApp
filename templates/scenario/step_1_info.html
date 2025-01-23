@@ -1,0 +1,69 @@
+
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% block content %}
+
+<ul class="steps">
+  <li class="step step-primary">Info</li>
+  <li class="step">Loads</li>
+  <li class="step">BMP Selection</li>
+  <li class="step">Update Costs</li>
+  <li class="step">BMP Constraint</li>
+  <li class="step">BMP Constraint Advanced</li>
+</ul>
+
+<div id="content_step">
+  <!-- Content for Step 1 -->
+
+
+
+    <div class="flex justify-end">
+        <button hx-get="{% url 'step2' %}" hx-target="#content_step" hx-swap="outerHTML" onclick="storeInputValues(); updateStepIndicator(2)">Next</button>
+    </div>
+
+</div>
+<script>
+function updateStepIndicator(currentStep) {
+    // Get all the steps
+    var steps = document.querySelectorAll('.steps .step');
+
+    // Clear the 'step-primary' class from all steps
+    steps.forEach(function(step) {
+        step.classList.remove('step-primary');
+    });
+
+    // Add 'step-primary' class to each step up to the current step
+    for (var i = 0; i < currentStep; i++) {
+        steps[i].classList.add('step-primary');
+    }
+}
+
+function storeInputValues() {
+    const inputs = document.querySelectorAll('input');
+    const values = {};
+    inputs.forEach(input => {
+        values[input.name] = input.value; // Ensure each input has a unique name attribute
+    });
+    localStorage.setItem('stepInputValues', JSON.stringify(values));
+}
+
+function restoreInputValues() {
+    const storedValues = JSON.parse(localStorage.getItem('stepInputValues'));
+    if (storedValues) {
+        for (const key in storedValues) {
+            const input = document.querySelector(`input[name="${key}"]`);
+            if (input) {
+                input.value = storedValues[key];
+            }
+        }
+    }
+}
+
+
+</script>
+
+
+{% endblock %}

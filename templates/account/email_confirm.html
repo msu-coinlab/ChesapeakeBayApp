@@ -1,0 +1,48 @@
+{% extends 'core/base.html' %}
+
+{% load static %}
+{% load i18n %}
+{% load account %}
+{% load allauth %}
+{% block content %}
+
+<div class="flex min-h-screen items-center justify-center bg-base-200">
+    <div class="m-4 min-h-[50vh] w-full max-w-sm lg:max-w-4xl">
+        <!-- logo and other content ... -->
+
+        <main class="grid bg-base-100 lg:aspect-[2/1] lg:grid-cols-2">
+            <!-- image or other content ... -->
+
+				<figure class="pointer-events-none bg-base-300 object-cover max-lg:hidden">
+					<img src="https://picsum.photos/id/283/1200/1200" alt="Login" class="h-full" />
+				</figure>
+            <!-- Email Confirmation Content -->
+            <div class="flex flex-col justify-center gap-4 px-10 py-10 lg:px-16">
+                <h1 class="text-lg font-bold">{% trans "Confirm Email Address" %}</h1>
+
+                {% if confirmation %}
+                    {% user_display confirmation.email_address.user as user_display %}
+                    {% if can_confirm %}
+                        <p>
+                            {% blocktrans with confirmation.email_address.email as email %}Please confirm that <a href="mailto:{{ email }}">{{ email }}</a> is an email address for user {{ user_display }}.{% endblocktrans %}
+                        </p>
+                        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-neutral">{% trans 'Confirm' %}</button>
+                        </form>
+                    {% else %}
+                        <p>
+                            {% blocktrans %}Unable to confirm {{ email }} because it is already confirmed by a different account.{% endblocktrans %}
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <p>
+                        {% blocktrans %}This email confirmation link expired or is invalid. Please contact the restart the process.{% endblocktrans %}
+                    </p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</div>
+
+{% endblock content %}

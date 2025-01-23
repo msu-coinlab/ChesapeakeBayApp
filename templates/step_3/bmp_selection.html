@@ -1,0 +1,283 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+
+{% block head %}
+{% endblock %}
+
+{%block content %}
+
+<div class="container mx-auto p-4">
+    
+    <div class="flex justify-end mb-4">
+
+    </div>
+    <div class="flex justify-center py-2" x-data> 
+        <ul class="steps"> 
+          <li class="step">
+            <a href="{% url 'step_2' scenario_id %}">
+                Loads</a></li>
+          <li class="step step-primary ">
+            <a href="{% url 'step_3' scenario_id %}">
+                BMP Selection</a></li>
+          <li class="step" x-show="$store.globalStore.targetItemsContainsManureTransport">
+
+            <a href="{% url 'step_3_5' scenario_id %}">
+                County Selection for Manure </a></li>
+        </ul>
+    </div>
+    <div id="save-state-trigger" 
+        hx-post="{% url 'update_selected_bmps' %}"
+        hx-trigger="saveState" 
+        hx-vals='javascript:{"scenario_id": {{ scenario_id }}, "sourceItems": window.getAllItemsWithCategories("#source-select"), "targetItems": window.getAllItemsWithCategories("#target-select")}'>
+    <!-- This div is hidden and used to trigger HTMX requests -->
+</div>
+
+    <div class="stats shadow w-full mb-5">
+    <div class="stat">
+        <div class="stat-title">Wastewater Dataset</div>
+        <div class="stat-value text-lg">{{ scenario_info }}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-title">Selected Counties</div>
+        <div class="stat-value text-lg">{{ counties }}</div>
+    </div>
+    </div>
+
+<div class="flex justify-center mb-6" >
+    <h1 class="text-3xl font-bold">BMP Selection</h1>
+</div>
+    
+    
+    <form action="#" enctype="multipart/form-data" method="post">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        <div class="grid grid-cols-12 gap-4">
+            <div class="col-span-5" x-data="categoryColors()">
+                <h5 class="text-lg font-semibold">Available BMPs</h5>
+                <select id="source-select" class="form-control w-full mt-2 h-96 shadow-md" size="80" multiple="multiple">
+                    {% for category, items in source_items.items %}
+                    <optgroup label="{{ category }}" style="font-weight: bold;">
+                        {% for value, name in items %}
+                        <option value="{{ value }}" :style="'color: ' + getColor('{{ category }}')">{{ name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-span-2 flex flex-col justify-center items-stretch space-y-2">
+                <button type="button" id="optgroup_rightAll" class="btn btn-secondary w-full text-black">
+                    <span class="material-icons">fast_forward</span>
+                </button>
+                
+                <button type="button" id="optgroup_rightSelected" class="btn btn-secondary w-full text-black shadow-md">
+                    <span class="material-icons">chevron_right</span>
+                </button>
+                
+                <button type="button" id="optgroup_leftSelected" class="btn btn-secondary w-full text-black shadow-md">
+                    <span class="material-icons">chevron_left</span>
+                </button>
+                
+                <button type="button" id="optgroup_leftAll" class="btn btn-secondary w-full text-black shadow-md">
+                    <span class="material-icons">fast_rewind</span>
+                </button>
+    
+
+            </div>
+    
+            <div class="col-span-5" x-data="categoryColors()">
+                <h5 class="text-lg font-semibold">Selected BMPs</h5>
+                <select id="target-select" class="form-control w-full mt-2 h-96 shadow-md" size="50" multiple="multiple">
+                    {% for category, items in target_items.items %}
+                    <optgroup label="{{ category }}" style="font-weight: bold;">
+                        {% for value, name in items %}
+                        <option value="{{ value }}" :style="'color: ' + getColor('{{ category }}')">{{ name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+    <div x-data> 
+        <div class="flex justify-between py-6" >
+                <a href="{% url 'step_2' scenario_id %}" class="btn btn-primary">Previous</a>
+                <a href="{% url 'step_4' scenario_id %}" class="btn btn-primary" x-show="!$store.globalStore.targetItemsContainsManureTransport">Advanced Settings</a>
+                <a href="{% url 'step_3_5' scenario_id %}" class="btn btn-primary" x-show="$store.globalStore.targetItemsContainsManureTransport">Manure Transport</a>
+        </div>
+        <div class="flex justify-end py-6" >
+                <a href="{% url 'optimization' scenario_id %}" class="btn bg-red-600 hover:bg-green-800 text-white" style="background-color: #dc2626; color: white;" x-show="!$store.globalStore.targetItemsContainsManureTransport">Optimize</a>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize Alpine.js global store
+  document.addEventListener('alpine:init', () => {
+    console.log('Initializing global store');
+    Alpine.store('globalStore', {
+      targetItemsContainsManureTransport: {{ contains_manure_transport|yesno:"true,false" }}
+    });
+  });
+  document.body.addEventListener('htmx:beforeSwap', function(event) {
+        // Check if the event is from 'save-state-trigger'
+        if (event.detail.elt.id === 'save-state-trigger') {
+            event.preventDefault(); // Stop HTMX from automatically processing the response
+
+            var response = event.detail.xhr.response;
+            var jsonResponse = JSON.parse(response);
+
+            if (jsonResponse.status !== 'success') {
+                // Handle error - show an error message
+                console.error('An error occurred');
+            }
+        }
+    });
+    window.getAllItemsWithCategories = function(selectId) {
+        var categories = [];
+        $(selectId + ' optgroup').each(function() {
+            var categoryLabel = $(this).attr('label');
+            var items = [];
+            $(this).find('option').each(function() {
+                items.push($(this).val());
+            });
+            categories.push({label: categoryLabel, items: items});
+        });
+        return categories;
+    }
+
+
+
+    $(document).ready(function() {
+	    $('#source-select, #target-select').multiselect({
+		    search: {
+                left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+                right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+            },
+            fireSearch: function(value) {
+                return value.length > 3;
+            },
+        });
+        // Function to clear search inputs and reset search
+        function clearAndResetSearch() {
+            // Clear search fields
+            var searchInputs = $('input[type="text"][name="q"]');
+
+            searchInputs.val('').trigger('keyup'); // Adjust the event type if needed
+        };
+        $('#optgroup_rightSelected').click(function() {
+            clearAndResetSearch();
+            moveSelectedItems('#source-select', '#target-select');
+            updateGlobalStore();
+
+        });
+
+        $('#optgroup_leftSelected').click(function() {
+            clearAndResetSearch();
+            moveSelectedItems('#target-select', '#source-select');
+            updateGlobalStore();
+        });
+        function moveSelectedItems(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' option:selected').each(function() {
+                var item = $(this);
+                console.log(item);
+                var sourceOptgroup = item.closest('optgroup');
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '" style="font-weight: bold;"></optgroup>').appendTo(targetSelectId);
+                }
+                
+                // Move the item to the appropriate category in the target select
+                item.appendTo(targetOptgroup);
+
+                // If the source optgroup has no more items, remove it
+                if (sourceOptgroup.children('option').length === 0) {
+                    sourceOptgroup.remove();
+                }
+                item.prop('selected', false);
+            });
+            htmx.trigger("#save-state-trigger", "saveState");
+        }
+        // Move all categories with items from source to target
+        $('#optgroup_rightAll').click(function() {
+            clearAndResetSearch();
+            moveAllItemsWithCategories('#source-select', '#target-select');
+            updateGlobalStore();
+        });
+
+        // Move all categories with items from target to source
+        $('#optgroup_leftAll').click(function() {
+            clearAndResetSearch();
+            moveAllItemsWithCategories('#target-select', '#source-select');
+            updateGlobalStore();
+        });
+
+        function moveAllItemsWithCategories(sourceSelectId, targetSelectId) {
+            $(sourceSelectId + ' optgroup').each(function() {
+                var sourceOptgroup = $(this);
+                var categoryLabel = sourceOptgroup.attr('label');
+
+                // Check if the category already exists in the target select
+                var targetOptgroup = $(targetSelectId + ' optgroup[label="' + categoryLabel + '"]');
+                if (targetOptgroup.length === 0) {
+                    // If not, create the new optgroup in the target select
+                    targetOptgroup = $('<optgroup label="' + categoryLabel + '" style="font-weight: bold;"></optgroup>').appendTo(targetSelectId);
+                }
+
+                // Move all items to the appropriate category in the target select
+                sourceOptgroup.children('option').appendTo(targetOptgroup);
+            });
+
+            // Clear the source select
+            $(sourceSelectId).empty();
+            $(targetSelectId).find('option').prop('selected', false);
+            htmx.trigger("#save-state-trigger", "saveState");
+        };
+        function updateGlobalStore() {
+            let targetSelectElement = document.getElementById('target-select');
+            let containsManureTransport = Array.from(targetSelectElement.querySelectorAll('option')).some(option => option.value === '31');
+            console.log('Contains Manure Transport:', containsManureTransport);
+            Alpine.store('globalStore').targetItemsContainsManureTransport = containsManureTransport;
+        }
+
+    });
+ function categoryColors() {
+        return {
+            colors: {
+                'Land': 'brown',
+                'Landuse Change': 'olive',
+                'Efficiency': 'blue',
+                'Animal': 'red',
+                'ManureTreatment': 'purple',
+                //'Policy': 'silver',
+                'Manure Transport': 'teal',
+                'Manure Treatment': 'navy',
+                'Pound Reduction': 'fuchsia',
+                'Animal Manure': 'black',
+                //'Wastwater': 'teal',
+                'Septic': 'maroon',
+                'Natural': 'lime',
+                'Developed': 'aqua',
+                'Agriculture': 'green',
+                // Add more categories and their corresponding colors here
+            },
+            getColor(category) {
+                return this.colors[category] || 'blue'; // Default to blue if category not found
+            }
+        };
+    }
+</script>
+{% endblock %}
+
+
+

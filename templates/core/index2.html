@@ -1,0 +1,200 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% block content %}
+
+<div class="drawer lg:drawer-open">
+    <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
+    <div class="drawer-content flex flex-col justify-between h-screen">
+        <!-- Page content here -->
+        <label for="my-drawer-2" class="btn btn-primary drawer-button lg:hidden">Open drawer</label>
+
+        <!--- Begins content --->    
+        <div id="conversation-log" class="overflow-auto flex-grow px-4 lg:px-10">
+            <!--- Conversation log --->
+
+            <form id="interjection-form" method="POST" class="w-full" hx-post="{% url 'create-interjection' conversation_id=conversation.id %}" hx-target="#interjection-body" hx-swap="afterbegin transition:true" hx-on::after-request="resetHumanField(this);" hx-on::after-swap="addAnimationClass(event)">
+                {% csrf_token %}
+                <div class="form-control">
+                    <!-- Target Language Field -->
+                    <div class="flex items-center space-x-2 mb-2">
+                        <label class="min-w-[120px]">Target language:</label>
+                        {% render_field human_interjection_form.language class="p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-52" %}
+                    </div>
+
+                    <!-- Conversation Type Radio Buttons -->
+                    <div class="flex items-center space-x-2 mb-2">
+                        <label class="min-w-[120px]">What would you like?:</label>
+                        <div class="flex space-x-4">
+                            {% for value, label in human_interjection_form.conversation_type.field.choices %}
+                            <div class="form-radio">
+                                <input type="radio" name="{{ human_interjection_form.conversation_type.name }}" value="{{ value }}"
+                                {% if human_interjection_form.conversation_type.value == value %} checked {% endif %}
+                                class="radio radio-primary" id="radio-{{ value }}">
+                                <label for="radio-{{ value }}" class="inline-block text-sm">{{ label }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Human input Field -->
+
+                    <div class="flex items-center mb-2 space-x-2">
+                        {% render_field human_interjection_form.human class="input input-bordered flex-grow w-full" placeholder="Write a sentence." %}
+                        <button type="submit" name="submit_interjection_form" class="btn btn-primary">Submit</button>
+                    </div>
+                    <!-- End Human input Field -->
+                </div>
+            </form>
+            <div id="interjection-body">
+                {% for interjection in interjections %}
+                {% partialdef interjection-partial inline=True %}
+                <!--- Bot --->
+                <div class="chat chat-start">
+                    <div class="chat-header">
+
+                        <div id="loadingIndicator-{{ interjection.id }}" class="htmx-indicator">
+                            <!-- Replace 'your-loading-animation.gif' with the path to your animated GIF -->
+                            <span class="loading loading-spinner loading-lg" alt="Loading" ></span>
+                        </div>
+                        Chihiro bot: 
+                        {% if not interjection.bot_audio_file %}
+                        <!-- Loading Indicator with an Animated GIF -->
+                        <button hx-post="{% url 'download-speech' interjection.id %}"
+                            hx-trigger="click"
+                            hx-indicator="#loadingIndicator-{{ interjection.id }}"
+                            hx-vals='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'
+                            hx-swap="outerHTML"
+                            class="text-xs opacity-80"
+                            id="downloadRecording"
+                            title="Generate Recording">
+                            <span class="material-symbols-outlined text-red-500">
+                                text_to_speech
+                            </span>
+                        </button>
+                        {% else %}
+                        <button onclick="playAudio('{{ interjection.bot_audio_file.url }}')" class="text-xs opacity-80" title="Play Audio" hx-indicator="#loadingIndicator-{{ interjection.id }}">
+                            <span class="material-symbols-outlined">
+                                play_circle
+                            </span>
+                        </button>
+                        {% endif %}
+
+                    </div>
+                    <div class="chat-bubble chat-bubble-primary">{{ interjection.bot|safe }}</div>
+                    <div class="chat-footer opacity-50">
+                        {% if interjection.conversation_type == 'T' %}
+                        Translate to 
+                        {% elif interjection.conversation_type == 'E' %}
+                        Edit in 
+                        {% elif interjection.conversation_type == 'C' %}
+                        Chat in 
+                        {% endif %}
+                        {% if interjection.language == 'E' %}
+                        English
+                        {% elif interjection.language == 'S' %}
+                        Spanish
+                        {% elif interjection.language == 'F' %}
+                        French
+                        {% elif interjection.language == 'J' %}
+                        Japanese
+                        {% elif interjection.language == 'G' %}
+                        German
+                        {% elif interjection.language == 'I' %}
+                        Italian
+                        {% endif %}
+                    </div>
+                </div>
+                <!--- End Bot --->
+
+                <!--- Human --->
+                <div class="chat chat-end">
+                    <div class="chat-header">
+                        Human: 
+
+                    </div>
+                    <div class="chat-bubble chat-bubble-secondary">{{ interjection.human }}</div>
+                    <div class="chat-footer opacity-50">
+                        <!-- add something here Play audio  -->
+                    </div>
+                </div>
+                <!--- End Human --->
+                {% endpartialdef %}
+                {% endfor %}
+            </div>
+            <!--- End conversation log --->
+
+        </div>
+        <!--- Ends content --->
+    </div> 
+    <div class="drawer-side">
+        <!-- Audio element to play the audio -->
+        <audio id="botAudioPlayer" hidden></audio>
+        <label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label> 
+
+        <form id='conversation-form' method="POST" 
+            >
+            {% csrf_token %}
+            <div class="form-control">
+                {% render_field conversation_form.title class="input input-bordered  p-4 w-80 min-h-full bg-base-100 text-base-content" placeholder="Enter a conversation title" %}
+            </div>
+            <button type="submit" name="submit_conversation_form" class="btn p-4 w-80 min-h-full bg-base-100 text-base-content">+ Add Conversation</button>
+        </form>
+
+
+<div id="conversation-body" class="flex flex-col w-80 min-h-full bg-base-200 text-base-content">
+        <!-- Conversation Items -->
+        {% for conversation in conversations %}
+            {% partialdef conversation-partial inline=True %}
+            <!-- Include partials/conversation-partial.html -->
+            <div class="flex justify-start items-center mb-2 {% cycle 'bg-base-100' 'bg-base-200' %}" id="conversation-{{ conversation.id }}">
+                <a href="{% url 'index_with_id' conversation_id=conversation.id %}" class="flex-grow truncate p-4">
+                    {{ conversation.title }}
+                </a>
+                <button class="btn btn-primary ml-2 p-1 text-xs" hx-get="{% url 'edit_conversation' conversation_id=conversation.id %}" hx-target="#conversation-{{ conversation.id }}" hx-swap="outerHTML transition:true">
+                    <span class="material-icons">edit</span>
+                </button>
+                <button class="btn btn-error ml-2 p-1 text-xs" hx-delete="{% url 'delete_conversation' conversation_id=conversation.id %}" hx-target="#conversation-{{ conversation.id }}" hx-swap="delete">
+                    <span class="material-icons">delete</span>
+                </button>
+                <!-- Edit Button -->
+            </div>
+
+
+            <!-- Edit form will be loaded here -->
+            {% endpartialdef %}
+
+        {% endfor %}
+    </div>
+            <!-- Division Line -->
+            <hr class="w-full border-t border-gray-300"> <!-- or you can use your own styling here -->
+
+            <!-- Computer-generated Voices Note -->
+            <div class="text-center text-xs text-gray-600 px-4">
+                Note: All voices are computer-generated.
+            </div>
+    </div>
+</div>
+
+<script>
+    function resetHumanField(formElement) {
+        var humanField = formElement.querySelector('[name="human"]');
+        if (humanField) {
+            humanField.value = '';
+        }
+    }
+    function playAudio(audioUrl) {
+        var audioPlayer = document.getElementById('botAudioPlayer');
+        audioPlayer.src = audioUrl;
+        audioPlayer.hidden = false;
+        audioPlayer.play();
+    }
+
+    function addAnimationClass(event) {
+        const newContent = event.detail.target;
+        newContent.classList.add('new-content-animation');
+    }
+</script>
+{% endblock %}
+

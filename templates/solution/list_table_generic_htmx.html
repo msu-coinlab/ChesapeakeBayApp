@@ -1,0 +1,467 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<style>
+.modal-background {
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+
+}
+
+.drawer-side {
+    z-index: 100; /* Example value; adjust as needed based on your layout */
+}
+.dt-body-right {
+    text-align: right;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+
+{{ selected_edge|json_script:"selected-edge" }}
+{{ data_points|json_script:"data-points" }}
+{{ execution_id|json_script:"execution-id" }}
+
+
+<div
+    class="container mx-auto p-4"
+    x-data="scatterPlotApp()"
+    x-init="initPlot()"
+>
+    <div class="px-5 my-5 text-center">
+        <h1 class="text-4xl font-bold text-primary">{{ page_title }}</h1>
+        <p></p>
+    </div>
+
+    <div class="drawer drawer-end">
+        <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content fixed right-0">
+            <!-- Page content here -->
+            <label
+                for="my-drawer-4"
+                class="drawer-button btn hover:bg-green-800"
+            >
+                <span class="material-icons">settings</span>
+            </label>
+        </div>
+
+        <div class="drawer-side">
+            <label
+                for="my-drawer-4"
+                aria-label="close sidebar"
+                class="drawer-overlay"
+            ></label>
+            <div
+                id="drawer-content"
+                namae="drawer-content"
+                class="p-4 w-80 min-h-full bg-base-200 text-base-content"
+            >
+                {% include 'solution/partials/_drawer_content.html' %}
+            </div>
+        </div>
+    </div>
+    <!--- <button @click="openModal = true">Open Modal</button> -->
+
+    <div
+        x-show="openModal"
+        @click.away="openModal = false"
+        @keydown.escape.window="openModal = false"
+        style="display: none"
+        class="modal-background"
+    >
+        <div @click.away="openModal=false" class="modal-content" @click.stop="">
+            <button
+                @click="openModal = false"
+                class="absolute top-0 right-1 mt-0 mr-0 text-2xl font-semibold hover:bg-gray-200 rounded-full cursor-pointer"
+            >
+                &times;
+                <!-- Represents 'X' -->
+            </button>
+            <div id="table-container3" name="table-container3"></div>
+            <!--- <h2>Modal Title</h2> --->
+            <!--- <p>This is a simple modal.</p> --->
+            <!-- Button to close modal -->
+        </div>
+    </div>
+    <div id="plot"></div>
+    <!-- Plotly plot will be rendered here -->
+    <table id="infoTable" class="display" style="width: 100%">
+        <!-- Table will be filled dynamically -->
+    </table>
+
+    <div id="table-container2" name="table-container2">
+        {% include 'solution/partials/_table.html' %}
+    </div>
+    <div class="px-5 my-5 text-right">
+        <a
+            href="{{ request.META.HTTP_REFERER|escape }}"
+            class="btn btn-secondary btn-sm"
+        >
+            <i class="material-icons">arrow_back</i>
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+
+<script>
+function initializeDataTables() {
+    // Destroy existing DataTables instance if exists to avoid reinitialization errors
+    var tableSelector = '.my-table';
+    if ($.fn.DataTable.isDataTable(tableSelector)) {
+        $(tableSelector).DataTable().destroy();
+    }
+
+    // Initialize DataTables
+    $(tableSelector).DataTable({
+        "pagingType": "simple_numbers",
+        "searching": true,
+        "ordering": true,
+        "autoWidth": true,
+        "pageLength": 25,
+         columnDefs: [
+           { 
+             targets: [1,2,3,4], 
+             className: "dt-body-right", // Apply right text alignment
+             render: function ( data, type, row, meta ) {
+                 if(type === 'display'){
+                     return parseInt(data).toLocaleString('en-US');
+                 }
+                 return data; // Return unaltered data for other types ('sort', 'type', 'filter')
+             }
+           }],
+    });
+}
+
+// Call the function on document ready to initialize DataTables
+$(document).ready(function() {
+    initializeDataTables();
+});
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'table-container2') {
+        initializeDataTables();
+    }
+});
+
+
+function scatterPlotApp() {
+    return {
+        dataPoints: JSON.parse('{{ data_points|safe }}'), // Initial data points
+        openModal: false,
+        executionId: null, // Initial data points
+        selectedIndices: [], // Tracks selected points by their indices
+        selectedEdge: null, // Initial selected edge
+        selectPlotType: 'scatter', // Default plot type
+        initDataTable: function() {
+            var tableSelector = '.my-table2';
+            this.$nextTick(() => {
+                if ($.fn.DataTable.isDataTable(tableSelector)) {
+                    $(tableSelector).DataTable().destroy();
+                }
+                if (!$.fn.DataTable.isDataTable(tableSelector)) {
+                    var table = $(tableSelector).DataTable({
+                        "paging": false,
+                        "info": false,
+                        "searching": true,
+                        "ordering": true,
+                        "autoWidth": true,
+                        columnDefs: [
+                          { 
+                            targets: [1,2,3], 
+                            className: "dt-body-right", // Apply right text alignment
+                            render: function ( data, type, row, meta ) {
+                                if(type === 'display'){
+                                    return parseInt(data).toLocaleString('en-US');
+                                }
+                                return data; // Return unaltered data for other types ('sort', 'type', 'filter')
+                            }
+                          }],
+                    });
+                    // Format the <tfoot> cells (assuming totals are in the same columns)
+                    $(`${tableSelector} tfoot th`).each(function(i) {
+                        // Check if this column index is one we want to format
+                        if ([1, 2, 3].includes(i)) {
+                            var val = parseInt($(this).text());
+                            if (!isNaN(val)) { // Check if conversion is successful
+                                $(this).text(val.toLocaleString('en-US'));
+                            }
+                        }
+                    });
+                }
+            });
+            $(tableSelector).on('shown.bs.modal', function () {
+                $(tableSelector).DataTable().columns.adjust().draw();
+            });
+        },
+        initPlot: function() {
+            this.openModal = false;
+            this.selectedEdge = JSON.parse(document.getElementById('selected-edge').textContent);
+            this.executionId = JSON.parse(document.getElementById('execution-id').textContent);
+            this.plotData(this.dataPoints);
+        },
+        handlePlotlyClick: function(data) {
+            const component = this;
+                const idx = data.points[0].pointNumber;
+                if (component.selectedIndices.includes(idx)) {
+                    component.selectedIndices = component.selectedIndices.filter(i => i !== idx);
+                } else {
+                    component.selectedIndices = [];
+                    component.selectedIndices.push(idx);
+                }
+                // Assuming you have the execution_id available in your component
+                const execution_id = component.execution_id; // Make sure this value is correctly set in your component
+                
+                // Construct the URL for the HTMX request
+                const url = `/solution/list/${this.executionId}`; // Adjust the URL pattern as needed
+                
+                // Make the HTMX request
+
+                htmx.ajax('GET', url, {
+                    target: '#table-container3',
+                    values: {
+                        name: 'display-loads-by-sector',
+                        execution_id: this.executionId,
+                        selected_solution: this.dataPoints[idx].id,
+                        selected_edge: document.getElementById('selectionEdge').value, 
+
+                    }
+                });
+
+            // HTMX request and after processing
+            document.addEventListener('htmx:afterSwap', function() {
+                component.initDataTable();
+                // Remove the event listener to prevent multiple initializations
+                document.removeEventListener('htmx:afterSwap', arguments.callee);
+            }, { once: true }); // Using { once: true } to auto-remove after execution
+
+            // Existing logic to open modal and replot data
+            this.openModal = true;
+            this.plotData(this.dataPoints);
+        },
+        updatePlotType: function() {
+            this.selectPlotType = document.getElementById('selectPlotTypeID').value;
+            this.plotData(this.dataPoints); // Re-plot with the new type
+        },
+        plotData: function(data) {
+            const component = this; // Reference to use inside nested functions
+            const selectPlotType = this.selectPlotType; // Use the component's state
+            const sumLoadTotal = Math.round(parseFloat('{{ sum_load_total }}'));  // Use the sum_load_total from the context, rounded
+            // Update colors based on selected indices
+            let colors = data.map((_, index) => 
+                this.selectedIndices.includes(index) ? 'red' : 'blue');
+            let trace, layout;
+            
+            // Determine the new y-axis limit by adding a bit of margin above sum_load_total
+            const yAxisUpperLimit = sumLoadTotal * 1.1;  // Increase by 10%
+        
+            if (selectPlotType === 'scatter') {
+                trace = {
+                    x: data.map(point => point.Cost),
+                    y: data.map(point => point.Pollutant),
+                    id: data.map(point => point.id),
+                    mode: 'markers',
+                    textposition: 'top center',
+                    type: 'scatter',
+                    text: data.map(point => point.name),
+                    marker: { size: 12, color: colors },
+                    name: `Optimization Run Solutions`
+                };
+        
+                layout = {
+                    hovermode: 'closest',
+                    title: 'Pareto Front',
+                    xaxis: {
+                        title: 'Cost'
+                    },
+                    yaxis: {
+                        title: 'Pollutant',
+                        range: [0, yAxisUpperLimit]  // Set the y-axis range to go above the red line
+                    },
+                    shapes: [
+                        {
+                            type: 'line',
+                            x0: Math.min(...data.map(point => point.Cost)),  // Start of the line on x-axis
+                            x1: Math.max(...data.map(point => point.Cost)),  // End of the line on x-axis
+                            y0: sumLoadTotal,  // y-coordinate of the line
+                            y1: sumLoadTotal,  // Same y-coordinate to make it a horizontal line
+                            line: {
+                                color: 'red',  // Color of the line
+                                width: 2,      // Width of the line
+                                dash: 'dot'    // Line style (dotted line)
+                            }
+                        }
+                    ],
+                    annotations: [
+                        {
+                            x: Math.max(...data.map(point => point.Cost)) * 0.9, // Position the annotation near the right end of the plot
+                            y: sumLoadTotal,  // Position the annotation at the red line
+                            text: 'Base Load', // The label text
+                            showarrow: true,  // Display the arrow pointing to the line
+                            arrowhead: 2,     // Arrow style
+                            ax: 0,            // X-offset for the annotation
+                            ay: -20,          // Y-offset to position the label above the line
+                            font: {
+                                size: 12,
+                                color: 'red'   // Color of the annotation text
+                            }
+                        }
+                    ],
+                    showlegend: true // Optional: show legend to differentiate instances
+                };
+            } else if (selectPlotType === 'scatter3D'){
+                trace = {
+                    x: data.map(point => point.N),
+                    y: data.map(point => point.P),
+                    z: data.map(point => point.S), // Assuming you have a Sediments dimension for the 3D plot
+                    id: data.map(point => point.id),
+                    mode: 'markers+text',
+                    textposition: 'top center',
+                    type: 'scatter3d',
+                    text: data.map(point => point.name),
+                    marker: {
+                        size: 6,
+                        color: data.map(point => point.Cost), // Use 'Cost' for color
+                        colorscale: 'Viridis', // Color scale for visualizing 'Cost'
+                        colorbar: {
+                            title: 'Cost' // Color bar to interpret 'Cost' values
+                        },
+                        showscale: true
+                    },
+                };
+                layout = {
+                    hovermode: 'closest',
+                    title: 'Pareto Front 4D',
+                    scene: { // Required for 3D plots
+                        xaxis: { title: 'Nitrogen (lbs/yr)' },
+                        yaxis: { title: 'Phosphorus (lbs/yr)' },
+                        zaxis: { title: 'Sediments (lbs/yr)' } // Assuming you have a Sediments dimension
+                    },
+                    margin: {
+                        l: 0,
+                        r: 0,
+                        b: 0,
+                        t: 30
+                    }
+                };
+            } else if (selectPlotType === 'pcp') {
+                // Parallel Coordinates Plot configuration
+                trace = {
+                    type: 'parcoords',
+                    pad: [80, 80, 80, 80],
+                    line: {
+                        color: data.map(point => point.Cost),
+                        colorscale: 'Viridis',
+                        showscale: true,
+                        cmin: Math.min(...data.map(point => point.Cost)),
+                        cmax: Math.max(...data.map(point => point.Cost)),
+        
+                    },
+                    dimensions: [
+                        { label: 'Nitrogen (lbs/yr)', values: data.map(point => point.N) },
+                        { label: 'Phosphorus (lbs/yr)', values: data.map(point => point.P) },
+                        { label: 'Sediments (lbs/yr)', values: data.map(point => point.S) },
+                        { label: 'Cost (USD)', values: data.map(point => point.Cost) },
+                        // Add other dimensions as needed
+                    ],
+        
+                    // Adding hover information using custom data
+                    customdata: data.map(point => point.name),
+                    hoverinfo: 'none', // Disable default hover info
+                    hovertemplate: '%{customdata}<extra></extra>', 
+        
+                };
+                layout = {
+                    hovermode: 'closest',
+                    title: 'Parallel Coordinates Plot',
+                };
+        
+            } else if (selectPlotType === 'splom') {
+                // Scatter Plot Matrix (SPLOM) configuration
+                dimensions = [
+                    { label: 'Cost', values: data.map(point => point.Cost) },
+                    { label: 'Nitrogen', values: data.map(point => point.N) }, // Example additional dimension
+                    { label: 'Phosphorus', values: data.map(point => point.P) }, // Example additional dimension
+                    { label: 'Sediments', values: data.map(point => point.S) }, // Example additional dimension
+                    // Add more dimensions as needed
+                ];
+            
+                trace = {
+                    type: 'splom',
+                    dimensions: dimensions,
+                    marker: {
+                        color: colors,
+                        size: 7,
+                        showscale: false // Can be set to true if you want to show a color scale
+                    },
+                    text: data.map(point => point.name), // Optionally, add names or identifiers
+                };
+            
+                layout = {
+                    hovermode: 'closest',
+                    title: 'Scatter Plot Matrix (SPLOM)',
+                };
+            } else if (selectPlotType === 'heatmap') {
+                // Heatmap configuration
+                // Assuming 'data' is structured appropriately; you might need to adjust this
+                // Example assumes 'data' could be transformed into a matrix form
+        
+                // Example data transformation or setup
+        
+                const zValues = data.map(row => [row.Cost]); // Each row's Cost becomes a cell's intensity
+                const xValues = ['N']; // Simplified for demonstration
+                const yValues = data.map(row => row.P.toString()); // Assuming P values are distinct
+        
+            
+                trace = {
+                    z: zValues,
+                    x: xValues,
+                    y: yValues,
+                    type: 'heatmap',
+                    colorscale: 'Viridis', // You can customize the colorscale
+                };
+            
+                layout = {
+                    title: 'Heatmap Representation',
+                    xaxis: {title: 'Nitrogen'},
+                    yaxis: {title: 'Phosphorus'}
+                };
+            }
+        
+            Plotly.newPlot('plot', [trace], layout);
+        
+            document.getElementById('plot').on('plotly_click', function(data) {
+                component.handlePlotlyClick(data);
+            });
+        },
+                
+    };
+}
+    window.scatterPlotApp = scatterPlotApp; // Make scatterPlotApp globally available
+</script>
+{% endblock %}

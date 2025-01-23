@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% block content %}
+
+<div class="flex justify-center mb-6" >
+    <h1 class="text-3xl font-bold">Scenario Information</h1>
+</div>
+<div class="container mx-auto p-4">
+
+    <div >
+        <div class="card-body">
+            <div class="grid grid-cols-4 gap-2">
+                {% with labels="col-span-1 text-lg" values="col-span-2 text-lg" %}
+                    <!-- Invisible Spacer Column -->
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Base Scenario:</div>
+                    <div class="{{ values }}">{{ scenario_info.name }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Counties:</div>
+                        <div class="{{ values }}">
+                        {% for county in counties %}
+                            {{ county }}
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Data Revision:</div>
+                    <div class="{{ values }}">{{ scenario_info.data_revision }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Condition:</div>
+                    <div class="{{ values }}">{{ scenario_info.condition }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Type ID:</div>
+                    <div class="{{ values }}">{{ scenario_info.type_id }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Backout:</div>
+                    <div class="{{ values }}">{{ scenario_info.backout }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Point Source:</div>
+                    <div class="{{ values }}">{{ scenario_info.point_src }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Atmospheric Deposition:</div>
+                    <div class="{{ values }}">{{ scenario_info.atm_dep }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Climate Change:</div>
+                    <div class="{{ values }}">{{ scenario_info.climate_change }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Soil:</div>
+                    <div class="{{ values }}">{{ scenario_info.soil }}</div>
+
+                    <div class="col-span-1"></div>
+                    <div class="{{ labels }}">Base Load:</div>
+                    <div class="{{ values }}">{{ scenario_info.base_load }}</div>
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+        <div class="px-5 my-5 text-right">
+            <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-secondary btn-sm">
+                <i class="material-icons">arrow_back</i>
+            </a>
+        </div>
+
+
+</div> <!-- end container -->
+
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}

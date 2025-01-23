@@ -1,0 +1,173 @@
+
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<div x-data="scatterPlotApp()" x-init="initPlot()">
+    <div>
+        <select x-on:change="changeView($event.target.value)">
+            <option value="normal-view">Normal View</option>
+            <option value="random">Random</option>
+        </select>
+    </div>
+
+    <div id="plot"></div> <!-- Plotly plot will be rendered here -->
+    <table id="infoTable" name="infoTable" style="width:100%">
+    <table id="infoTable2" name="infoTable2" style="width:100%">
+
+        <!-- Table will be filled dynamically -->
+    </table>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+function scatterPlotApp() {
+    return {
+        dataPoints: JSON.parse('{{ data_points|safe }}'), // Initial data points
+        dataPoints2: JSON.parse('{{ data_points2|safe }}'), // Initial data points
+        baseLoads: JSON.parse('{{ base_loads|safe }}'), // Initial data points
+        edgeSelected: '{{ edge_selected|safe }}',
+        pollutantSelected: '{{ pollutant_selected|safe }}',
+        selectedIndices: [], // Tracks selected points by their indices
+        initPlot: function() {
+            this.plotData(this.dataPoints, this.edgeSelected, this.pollutantSelected);
+        },
+        plotData: function(data, edgeSelected, pollutantSelected) {
+            const component = this; // Reference to use inside nested functions
+
+            // Update colors based on selected indices
+            let colors = data.map((_, index) => 
+                this.selectedIndices.includes(index) ? 'red' : 'blue');
+
+            const trace = {
+                x: data.map(point => point.total.Cost),
+                y: data.map(point => point.total.Eos.N),
+                mode: 'markers',
+                type: 'scatter',
+                text: data.map(point => point.name),
+                marker: { size: 12, color: colors },
+            };
+
+            const layout = {
+                hovermode: 'closest',
+                title: 'Scatter Plot: Cost vs. Pollutant',
+            };
+
+            Plotly.newPlot('plot', [trace], layout);
+
+            document.getElementById('plot').on('plotly_click', data => {
+                const idx = data.points[0].pointIndex;
+                // Toggle selection
+                if (component.selectedIndices.includes(idx)) {
+                    component.selectedIndices = component.selectedIndices.filter(i => i !== idx);
+                } else {
+                    component.selectedIndices.push(idx);
+                }
+                component.updateDetailsTable();
+                component.updateDetailsTable2();
+                component.plotData(component.dataPoints, edgeSelected, pollutantSelected); // Replot to update colors
+            });
+        },
+
+updateDetailsTable: function(edgeSelected, pollutantSelected) {
+    const infoTable = document.getElementById('infoTable');
+    // Clear the table, then setup headers dynamically based on selections
+    infoTable.innerHTML = `<tr>
+        <th>Scenario</th>
+        <th>Cost</th>
+        <th>Nitrogen</th>
+        <th>Phosphorus</th>
+        <th>Sediments</th>
+    </tr>`;
+
+        let newRow = infoTable.insertRow(-1);
+        newRow.insertCell(0).innerHTML = this.baseLoads.name;
+        newRow.insertCell(1).innerHTML = this.baseLoads.Cost;
+        // Dynamically access the pollutant value
+        newRow.insertCell(2).innerHTML = this.baseLoads.Eos.N;
+        newRow.insertCell(2).innerHTML = this.baseLoads.Eos.P;
+        newRow.insertCell(2).innerHTML = this.baseLoads.Eos.S;
+    this.selectedIndices.forEach(index => {
+        const point = this.dataPoints[index];
+        // Assuming `detail` is a property you want to include
+        let detail = 'Some detail here'; // Placeholder for actual detail
+
+        // Create a new row for each data point
+        let newRow = infoTable.insertRow(-1);
+        newRow.insertCell(0).innerHTML = point.id;
+        newRow.insertCell(1).innerHTML = point.total.Cost;
+        // Dynamically access the pollutant value
+        newRow.insertCell(2).innerHTML = point.total.Eos.N;
+        newRow.insertCell(2).innerHTML = point.total.Eos.P;
+        newRow.insertCell(2).innerHTML = point.total.Eos.S;
+    });
+},
+updateDetailsTable2: function(edgeSelected, pollutantSelected) {
+    const infoTable2 = document.getElementById('infoTable2');
+    // Clear the table, then setup headers dynamically based on selections
+    infoTable2.innerHTML = `<tr>
+        <th>Scenario</th>
+        <th>Nitrogen</th>
+        <th>Phosphorus</th>
+        <th>Sediments</th>
+    </tr>`;
+
+    this.selectedIndices.forEach(index => {
+        const point = this.dataPoints[index];
+        // Assuming `detail` is a property you want to include
+        let detail = 'Some detail here'; // Placeholder for actual detail
+
+        // Create a new row for each data point
+        let newRow2 = infoTable2.insertRow(-1);
+        newRow2.insertCell(0).innerHTML = point.id;
+        newRow2.insertCell(2).innerHTML = point.total2.Eos.N;
+        newRow2.insertCell(2).innerHTML = point.total2.Eos.P;
+        newRow2.insertCell(2).innerHTML = point.total2.Eos.S;
+    });
+},
+        changeView: function(view) {
+            if (view === 'random') {
+                this.selectedIndices = []; // Reset selection
+                this.fetchRandomPoints();
+            } else {
+                this.selectedIndices = []; // Reset selection
+                this.initPlot(); // Re-initialize with original data
+            }
+            this.updateDetailsTable(this.edgeSelected, this.pollutantSelected); // Clear the details table
+            this.updateDetailsTable2(this.edgeSelected, this.pollutantSelected); // Clear the details table
+        },
+        fetchRandomPoints: function() {
+            const component = this;
+            fetch('/solution/htmx-random-points/')
+                .then(response => response.json())
+                .then(data => {
+                    component.dataPoints = data; // Update with new random data
+                    component.selectedIndices = []; // Reset selection
+                    component.plotData(component.dataPoints, component.edgeSelected, component.pollutantSelected); // Replot with new data
+                });
+        },
+    };
+}
+
+$(document).ready(function() {
+    $('.infoTable').DataTable({
+        "pagingType": "simple_numbers", // Example customization
+        "searching": true, // Enable the search box
+        "ordering": true, // Enable column ordering
+        "autoWidth": false, // Disable the autoWidth feature
+        "pageLength": 25,
+    });
+});
+</script>
+{% endblock %}

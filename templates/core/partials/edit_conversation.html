@@ -1,0 +1,11 @@
+{% load widget_tweaks %}
+<form hx-post="{% url 'update_conversation' conversation_id=conversation_id %}" hx-target="this" htx-swap="outerHTML">
+    {% csrf_token %}
+    
+    <div class="flex justify-start items-center mb-2 ">
+        {{ form_edit_conversation.title|add_class:"input-bordered flex-grow truncate p-4" }}
+        <button type="submit" class="btn btn-success ml-2 text-xs">
+            <span class="material-icons">save</span>
+        </button>
+    </div>
+</form>

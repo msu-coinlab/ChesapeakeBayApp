@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container">
+    <div class="px-5 my-5 text-center">
+        <h1>{{ title }}</h1>
+        <p></p>
+    </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for object in objects %}
+                    <tr class="movie-row">
+                        <td>{{ object.title }}</td>
+                        <td>
+                            <a href="{% url 'update_email_template' slug=object.slug %}" class="btn btn-primary">Editar</a>
+                            <a href="{% url 'delete_email_template' slug=object.slug %}" class="btn btn-danger">Borrar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    <a href="{{ create_url }}" class="btn btn-primary">
+        {{ create_title }}
+    </a>
+
+    <div class="px-5 my-5 text-right">
+        <a href="{{request.META.HTTP_REFERER|escape}}">Back</a>
+    </div>
+</div>
+
+{% endblock %}

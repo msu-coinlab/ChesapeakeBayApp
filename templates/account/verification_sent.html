@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="flex min-h-screen items-center justify-center bg-base-200">
+    <div class="m-4 min-h-[50vh] w-full max-w-sm lg:max-w-4xl">
+        <!-- logo and other content ... -->
+
+        <main class="grid bg-base-100 lg:aspect-[2/1] lg:grid-cols-2">
+            <!-- Image or any other content -->
+
+				<figure class="pointer-events-none bg-base-300 object-cover max-lg:hidden">
+					<img src="https://picsum.photos/id/283/1200/1200" alt="Login" class="h-full" />
+				</figure>
+            <!-- Email Verification Information -->
+            <div class="flex flex-col justify-center gap-4 px-10 py-10 lg:px-16">
+                <h1 class="text-lg font-bold">{% trans "Verify Your Email Address" %}</h1>
+                <p>
+                    {% trans "We have sent an email to you for verification. Follow the link provided to finalize the signup process. If you do not see the verification email in your main inbox, check your spam folder. Please contact us if you do not receive the verification email within a few minutes." %}
+                </p>
+                
+                <!-- Optional additional information or links -->
+            </div>
+        </main>
+    </div>
+</div>
+
+{% endblock content %}

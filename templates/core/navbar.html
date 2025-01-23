@@ -1,0 +1,46 @@
+
+{% load static %}
+<nav class="bg-white-300 p-2 flex justify-between items-center font-bold shadow-lg">
+    <!-- Left Section: Menu Items -->
+    <div class="flex items-center">
+        <ul class="menu menu-horizontal px-1 text-lg">
+            <li><a href="/">Home</a></li>
+            <li><a href="/scenario/list/">Optimization Scenarios</a></li>
+            <li tabindex="0" class="dropdown dropdown-hover">
+                <button class="text-black">Help</button>
+                <ul class="dropdown-content menu p-2 shadow bg-base-100 w-52">
+                    <li><a href="/visual-guides">Visual Guides</a></li>
+                    <li><a href="/faqs">F.A.Q.s</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Middle Section: Logo -->
+    <div class="flex justify-center">
+            <img src="{% static 'images/logo.png' %}" alt="Logo" style="height: 70px;"/>
+    </div>
+
+    <!-- Right Section: Login Menus -->
+    <div class="flex justify-end">
+        <div class="dropdown dropdown-end">
+            <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                <div class="w-10  rounded-full">
+                    <span class="material-symbols-outlined text-4xl">account_circle</span>
+                </div>
+            </label>
+            <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+                {% if not user.is_authenticated %}
+                    <li><a href="{% url 'account_login' %}">Login</a></li>
+                    <li><a href="{% url 'account_signup' %}">Sign Up</a></li>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'account_logout' %}">Logout</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+

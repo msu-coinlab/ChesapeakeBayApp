@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% block content %}
+
+
+  <div class="container mx-auto p-5">
+    <div class="text-center">
+      <!-- <div class="badge badge-secondary mb-3">CBP-DMT</div>
+      <h1 class="text-5xl font-bold mb-5">Decision Making Tool for the <span class="text-primary">Chesapeake Bay Program</span> developed by <span class="text-secondary">Michigan State University</span></h1>
+      <p class="mb-5">.</p> -->
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <!-- Content on the left side (if any) -->
+        <div class="badge badge-secondary mb-3">CBP-DMT</div>
+        <h1 class="text-5xl font-bold mb-5">Decision Making Tool for the <span class="text-blue-500">Chesapeake Bay Program</span> developed by <span class="text-green-900">Michigan State University</span></h1>
+        <p class="mb-5">.</p>
+      </div>
+      <div class="flex justify-center">
+        <!-- Placeholder for the map or image -->
+        <img src="{% static 'images/chesapeakebay.png' %}" alt="Chesapeake Bay Map" /><!-- class="shadow-lg rounded-lg"/> -->
+
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}
+

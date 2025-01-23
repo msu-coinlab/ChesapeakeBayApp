@@ -1,0 +1,15 @@
+<!-- templates/record_audio.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Recording</title>
+    <script src="{% static 'js/record_audio.js' %}" defer></script>
+</head>
+<body>
+    {% csrf_token %}
+    <button id="startRecord">Start Recording</button>
+    <button id="stopRecord" disabled>Stop Recording</button>
+    <audio id="audioPlayback" controls></audio>
+</body>
+</html>

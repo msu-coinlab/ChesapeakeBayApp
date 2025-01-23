@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="container" x-data="{
+    isFormValid: function () {
+        // Assuming to_users and to_group are select elements; adjust if necessary
+        return this.$refs.toUsersSelect.value !== '' || this.$refs.toGroupSelect.value !== '';
+    }
+}">
+    <div class="px-5 my-5 text-center">
+        <h1>{{ page_title }}</h1>
+        <p></p>
+    </div>
+    <div class="container">
+        <div class="px-5 my-5">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <a href="{{ request.META.HTTP_REFERER|escape }}" class="btn btn-primary btn-block">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-block">Enviar</button>
+            </form>
+        </div>
+    </div>
+    <div class="px-5 my-5 text-right">
+        <a href="{{ request.META.HTTP_REFERER|escape }}">Back</a>
+    </div>
+</div>
+{% endblock %}

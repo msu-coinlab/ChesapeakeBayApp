@@ -1,0 +1,16 @@
+
+/* In static/css/animations.css */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.new-content-animation {
+    animation: slideDown 4.5s ease forwards;
+}

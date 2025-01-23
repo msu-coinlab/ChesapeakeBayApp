@@ -1,0 +1,3601 @@
+
+<div class="modal fade" aria-hidden="true" style="display: none;" id="product_preview_modal">
+    <div class="modal-dialog modal-xl" style="max-width: 80% !important;">
+        <div class="modal-body">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Previsualizar formato de producto</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                </div>
+                <div class="modal-body" style="padding: 20px; max-height: 600px; overflow-y: scroll;">
+                    
+                    <div class="alert alert-warning alert-dismissible fade" role="alert" id="alert_bad_preview" style="display: none;">
+						<strong>No ha sido posible obtener una previsualización. Por favor revise el formato de entrada.</strong>
+						<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+						  <span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+
+					<div id="lbl_product_preview">
+
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button class="btn btn-primary" data-dismiss="modal" onclick="addProductManual();">Añadir</button>
+
+					<button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+				</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{block header}}
+<link rel="stylesheet" href="{{=URL('static','js/bootstrap-twitter/bootstrap.css')}}">
+<script src="{{=URL('static','js/multiselect.js')}}"></script>
+{{end}}
+
+<style>
+	.nav-metodos li a{
+		background-color: #6c757d;
+		color:#fff;
+	}
+
+	.nav-metodos .nav-link.active{
+		background-color: #1ABC9C !important;
+		color:#fff;
+	}
+	
+	/*
+	*
+	* ==========================================
+	* CUSTOM UTIL CLASSES
+	* ==========================================
+	*
+	*/
+
+	hr.dashed {
+		border-top: 2px dashed #999;
+	}
+
+	hr.dotted {
+		border-top: 2px dotted #999;
+	}
+
+	hr.solid {
+		border-top: 2px solid #999;
+	}
+
+
+	hr.hr-text {
+	position: relative;
+		border: none;
+		height: 1px;
+		background: #999;
+	}
+
+	hr.hr-text::before {
+		content: attr(data-content);
+		display: inline-block;
+		background: #fff;
+		font-weight: bold;
+		font-size: 0.85rem;
+		color: #999;
+		border-radius: 30rem;
+		padding: 0.2rem 2rem;
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+	}
+
+/*
+*
+* ==========================================
+* CUSTOM TABLE FIXED HEADER CSS
+* ==========================================
+*
+*/
+.table-fixed tbody {
+    height: 300px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.table-fixed thead,
+.table-fixed tbody,
+.table-fixed tr,
+.table-fixed td,
+.table-fixed th {
+    display: block;
+}
+
+.table-fixed tbody td,
+.table-fixed tbody th,
+.table-fixed thead > tr > th {
+    float: left;
+    position: relative;
+
+    &::after {
+        content: '';
+        clear: both;
+        display: block;
+    }
+}
+
+
+</style>
+
+<!--
+<div class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true" id="orcid_modal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+		<h1>Productos:</h1>
+    </div>
+  </div>
+</div>
+-->
+<div class="alert alert-warning alert-dismissible fade" role="alert" id="alert_bad_opt" >
+							<strong>The scenario was successfully sent to optimize!</strong>
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+							  <span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+
+<div class="alert alert-success alert-dismissible fade" role="alert" id="alert_sucess_opt" >
+							<strong>The scenario was successfully sent to optimize!</strong>
+							<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+							  <span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+
+<div id="processTabs" data-plugin="tabs" class="customjs">
+
+	<ul class="process-steps row col-mb-30">
+		<li class="col-sm-6 col-lg-2">
+			<a href="#ptab1" class="i-circled i-bordered i-alt mx-auto">1</a>
+			<h5>Scenario Info</h5>
+		</li>
+		<li class="col-sm-6 col-lg-2">
+			<a href="#ptab2" class="i-circled i-bordered i-alt mx-auto">2</a>
+			<h5>Loads</h5>
+		</li>
+		<li class="col-sm-6 col-lg-2">
+			<a href="#ptab3" class="i-circled i-bordered i-alt mx-auto">3</a>
+			<h5>BMP Selection</h5>
+		</li>
+		<li class="col-sm-6 col-lg-2">
+			<a href="#ptab4" class="i-circled i-bordered i-alt mx-auto">4</a>
+			<h5>Update Costs</h5>
+		</li>
+		<li class="col-sm-6 col-lg-2">
+			<a href="#ptab5" class="i-circled i-bordered i-alt mx-auto">5</a>
+			<h5>BMP Constraint</h5>
+		</li>
+		<li class="col-sm-6 col-lg-2">
+			<a href="#ptab6" class="i-circled i-bordered i-alt mx-auto">6</a>
+			<h5>BMP Constraint Advanced</h5>
+		</li>
+	</ul>
+
+	<div>
+		<div id="ptab1">
+
+            <h1>Scenario Info</h1>
+			<!--- <div class="criterion-note"></div> --->
+			<br>
+
+			<div class="form-group row">
+				<label class="col-md-3 col-form-label">Optimization Scenario Name:</label>
+				<label class="col-md-9 col-form-label">{{=ss_name}}</label>
+				<label class="col-md-3 col-form-label">Counties:</label>
+				<label class="col-md-9 col-form-label">{{=ss_counties}}</label>
+				<label class="col-md-3 col-form-label">Base Scenario:</label>
+				<label class="col-md-9 col-form-label">{{=ss_base_scenario}}</label>
+				<label class="col-md-3 col-form-label">Base Condition:</label>
+				<label class="col-md-9 col-form-label">{{=bs_base_condition}}</label>
+				<label class="col-md-3 col-form-label">Scenario Type:</label>
+				<label class="col-md-9 col-form-label">{{=bs_scenario_type}}</label>
+				<label class="col-md-3 col-form-label">Cost Profile:</label>
+				<label class="col-md-9 col-form-label">{{=bs_cost_profile}}</label>
+				<label class="col-md-3 col-form-label">Historical Crop Need Scenario:</label>
+				<label class="col-md-9 col-form-label">{{=bs_historical_crop_need_scenario}}</label>
+				<label class="col-md-3 col-form-label">Point Source Data Set:</label>
+				<label class="col-md-9 col-form-label">{{=bs_point_source_data_set}}</label>
+			</div>
+
+			<div class="line line-sm mb-4"></div>
+			<a href="#" class="button button-3d m-0 float-right tab-linker" rel="2">Next</a>
+
+		</div>
+		<div id="ptab2">
+            <h1>Loads</h1>
+			<table class="table" id="bmp_summary_table">
+				<thead>
+					<tr>
+						<th>Load</th>
+						<th>Initial Load</th>
+						<!--<th>Reduction Mode</th>-->
+						<th>Removal Percentage</th>
+                        <th></th>
+						<th>Expected load</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Nitrogen</td>
+						<td align='right'>{{="{:,.2f}".format(nitrogen_init)}}</td>
+						<td>
+							<div class="input-group mb-2">
+								<input type="number" name="nitrogen_percentage" id="nitrogen_percentage"
+									class="form-control amount-input amount_percentage_val_inv" value="{{='{:,.2f}'.format(pollutant_proposed[0])}}"
+									data-class="nitrogen" data-type="percentage" min="0" max="100">
+								<div class="input-group-prepend">
+									<div class="input-group-text">%</div>
+								</div>
+							</div>
+						</td>
+                        <td></td>
+
+						<td>
+							<div class="input-group mb-2">
+								<input type="number" name="nitrogen_proposed_amount_" id="nitrogen_proposed_amount"
+									class="form-control amount-input amount_percentage_val_inv" step=".01"
+									value="{{='{:.2f}'.format(pollutant_proposed_values[0])}}" data-class="nitrogen" data-type="amount"
+									data-max-amount="{{='{:.2f}'.format(nitrogen_init)}}" min="0" max="{{="{:.2f}".format(nitrogen_init)}}">
+
+								<div class="input-group-prepend">
+									<div class="input-group-text">lb</div>
+								</div>
+							</div>
+						</td>
+
+					</tr>
+					<tr>
+						<td>Phosphorus</td>
+						<td align='right'>{{="{:,.2f}".format(phosphorus_init)}}</td>
+						
+						<td>
+							<div class="input-group mb-2">
+								<input type="number" name="phosphorus_percentage" id="phosphorus_percentage"
+									class="form-control amount-input amount_percentage_val_inv" value="{{='{:,.2f}'.format(pollutant_proposed[1])}}"
+									data-class="phosphorus" data-type="percentage" min="0" max="100">
+								<div class="input-group-prepend">
+									<div class="input-group-text">%</div>
+								</div>
+							</div>
+						</td>
+
+                        <td></td>
+						<td>
+							<div class="input-group mb-2">
+								<input type="number" name="phosphorus_proposed_amount_" id="phosphorus_proposed_amount"
+									class="form-control amount-input amount_percentage_val_inv" step=".01"
+									data-class="phosphorus" data-type="amount"
+									value="{{='{:.2f}'.format(pollutant_proposed_values[1])}}"
+									data-max-amount="{{='{:.2f}'.format(phosphorus_init)}}">
+								<div class="input-group-prepend">
+									<div class="input-group-text">lb</div>
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>Sediments</td>
+						<td align='right'>{{="{:,.2f}".format(sediments_init)}}</td>
+						<td>
+							<div class="input-group mb-2">
+								<input type="number" name="sediments_percentage" id="sediments_percentage"
+									class="form-control amount-input amount_percentage_val_inv" value="{{='{:,.2f}'.format(pollutant_proposed[2])}}"
+									data-class="sediments" data-type="percentage" min="0" max="100">
+								<div class="input-group-prepend">
+									<div class="input-group-text">%</div>
+								</div>
+							</div>
+						</td>
+
+                        <td></td>
+						<td>
+							<div class="input-group mb-2">
+								<input type="number" name="sediments_proposed_amount" id="sediments_proposed_amount"
+									class="form-control amount-input amount_percentage_val_inv" step=".01"
+									data-class="sediments" data-type="amount"
+									value="{{='{:.2f}'.format(pollutant_proposed_values[2])}}"
+									data-max-amount="{{='{:.2f}'.format(sediments_init)}}">
+								<div class="input-group-prepend">
+									<div class="input-group-text">lb</div>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<br>
+			<br>
+			<br>
+
+			<div class="form-group row">
+				<label class="col-md-6 col-form-label">Total dollars for BMP implementation: </label>
+				<div class="col-md-3">
+					<input id="total_dollars" type="number" class="form-control" />
+				</div>
+			</div>
+			
+			<div class="form-group row">
+				<label class="col-md-3 col-form-label">Total acres allocated to BMP: </label>
+				<label class="col-md-2 col-form-label">{{='{:,.2f}'.format(total_acres)}} Acres</label>
+				<div class="col-sm-2">
+					<input type="number" name="total_acres_percentage" id="total_acres_percentage"
+						class="form-control amount-input amount_percentage_val" value="{{='{:,.2f}'.format(proposed_acres)}}" data-class="total_acres"
+						data-type="percentage">
+				</div>
+				<div class="input-group-prepend">
+					<div class="input-group-text">%</div>
+				</div>
+				<div class="col-sm-3">
+					<input type="number" name="total_acres_proposed_amount_" id="total_acres_proposed_amount"
+						class="form-control amount-input amount_percentage_val" step=".01" data-class="total_acres"
+						data-type="amount" data-max-amount="{{='{:.2f}'.format(total_acres)}}"
+						value="{{='{:.2f}'.format(total_acres)}}">
+				</div>
+				<div class="input-group-prepend">
+					<div class="input-group-text">Acres</div>
+				</div>
+
+			</div>
+
+			<p></p>
+
+			<div class="line line-sm mb-4"></div>
+			<a href="#" class="button button-3d m-0 tab-linker" rel="1">Previous</a>
+			<!--<a href="#" class="button button-3d m-0 float-right tab-linker" rel="3">Revisar</a>-->
+			<a class="button button-3d m-0 float-right tab-linker" rel="3" style="color: white;">Next</a>
+		</div>
+
+		<div id="ptab3">
+            <h1>BMP Selection</h1>
+            <form action="#" enctype="multipart/form-data" method="post">
+                <div class="row">
+                    <div class="col-sm-5">
+            			<h5>Available BMPs</h5>
+                    </div>
+                    
+                    <div class="col-sm-2">
+                        <a href="#" class="btn btn-primary btn" onclick="save_bmps();">Save Selected BMPs</a>
+                    </div>
+                    
+                    <div class="col-sm-5">
+            			<h5>Selected BMPs</h5>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-5">
+                        <select name="from" id="optgroup" class="form-control" size="30" multiple="multiple">
+            				{{for key_sector, bmps_ids in sorted(select_sector_bmps_dict.items(), key=lambda item: item[0]):}}
+                        		<optgroup label="{{=key_sector}}">
+            						{{for bmp_id in bmps_ids:}}
+            							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+            						{{pass}}
+                        		</optgroup>
+            				{{pass}}
+                        </select>
+                    </div>
+                    
+                    <div class="col-sm-2">
+                        <button type="button" id="optgroup_rightAll" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>
+                        <button type="button" id="optgroup_rightSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-right"></i></button>
+                        <button type="button" id="optgroup_leftSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-left"></i></button>
+                        <button type="button" id="optgroup_leftAll" class="btn btn-block"><i class="glyphicon glyphicon-backward"></i></button>
+                    </div>
+                    
+                    <div class="col-sm-5">
+                        <select name="to" id="optgroup_to" class="form-control" size="30" multiple="multiple">
+            				{{for key_sector, bmps_ids in selected_sector_bmps_dict.items():}}
+                        		<optgroup label="{{=key_sector}}">
+            						{{for bmp_id in bmps_ids:}}
+            							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+            						{{pass}}
+                        		</optgroup>
+            				{{pass}}
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+			<p></p>
+
+			<div class="line line-sm mb-4"></div>
+			<a href="#" class="button button-3d m-0 tab-linker" rel="2">Previous</a>
+			<!--<a href="#" class="button button-3d m-0 float-right tab-linker" rel="3">Revisar</a>-->
+			<a class="button button-3d m-0 float-right tab-linker" rel="4" style="color: white;">Next</a>
+        </div>
+
+
+		<div id="ptab4">
+                    <h1>Update BMP Total Cost Per Unit</h1>
+
+                    <form action="#" enctype="multipart/form-data" method="post">
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id"
+                                id="no_table_bmp_id__label">BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="bmp_id" name="bmp_id"
+                                    onchange="update_cost();" sytle="width=100%;">
+                                    <option value=""></option>
+                                    {{for key_sector, bmps_ids in selected_sector_bmps_dict.items():}}
+                                		<optgroup label="{{=key_sector}}">
+                    						{{for bmp_id in bmps_ids:}}
+                    							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+                    						{{pass}}
+                                		</optgroup>
+                    				{{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Total cost per unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="cost" name="cost" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="bmp_unit" name="bmp_unit" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">New total cost per unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="new_cost" name="new_cost" type="text" value="" />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_cost_bmp();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_cost_table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>BMP</th>
+                                        <th>Original Cost per Unit ($)</th>
+                                        <th>Updated Cost per Unit ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cost_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in price_bmps_json:}}
+                                    <tr>
+                                        <td>{{=i+1}}</td>
+                                        <td>{{=row[1]}}</td>
+                                        <td>{{=row[2]}}</td>
+                                        <td>{{=row[3]}}</td>
+                                        <td align='right'><a href="#" class="btn btn-danger btn-sm"
+                                                onclick="del_cost_bmp({{=i}});"><i class="fas fa-trash"></i></a></td>
+                                    </tr>
+                                    {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+
+			<div class="line line-sm mb-4"></div>
+			<a href="#" class="button button-3d m-0 tab-linker" rel="3">Previous</a>
+			<!--<a href="#" class="button button-3d m-0 float-right tab-linker" rel="3">Revisar</a>-->
+			<a class="button button-3d m-0 float-right tab-linker" rel="5" style="color: white;">Next</a>
+        </div>
+        <div id="ptab5">
+
+                    <h1>BMP Constraint</h1>
+
+                    <form action="#" enctype="multipart/form-data" method="post">
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id"
+                                id="no_table_bmp_id__label">BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="bmp_id2" name="bmp_id2"
+                                    onchange="update_cost2();">
+                                    <option value=""></option>
+                                    {{for key_sector, bmps_ids in selected_sector_bmps_dict.items():}}
+                                		<optgroup label="{{=key_sector}}">
+                    						{{for bmp_id in bmps_ids:}}
+                    							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+                    						{{pass}}
+                                		</optgroup>
+                    				{{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Total cost per unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="cost2" name="cost2" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="bmp_unit2" name="bmp_unit2" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-3">Constraint</div>
+                            <div class="col-sm-3">
+                                <input type="number" name="limit_unit" id="limit_unit" placeholder="Units"
+                                    class="form-control amount-input amount_unit_cost" value="{{='{:.2f}'.format(0.0)}}"
+                                    data-class="limit" data-type="unit">
+                            </div>
+                            <div class="input-group-prepend">
+                                <div class="input-group-text" id="label_limit_unit" name="label_limit_unit">Units</div>
+                            </div>
+                            <div class="col-sm-3">
+                                <input type="number" name="limit_cost" id="limit_cost" placeholder="Cost"
+                                    class="form-control amount-input amount_unit_cost" value="{{='{:.2f}'.format(0.0)}}"
+                                    data-class="limit" data-type="amount">
+                            </div>
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">Cost ($)</div>
+                            </div>
+
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_limit_bmp();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_limit_table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>BMP</th>
+                                        <th>Maximum Allocation (Units)</th>
+                                        <th>Maximum Allocation ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="limit_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in limit_bmps_json:}}
+                                    <tr>
+                                        <td>{{=i+1}}</td>
+                                        <td>{{=row[1]}}</td>
+                                        <td>{{='{:,.2f}'.format(row[4])}}</td>
+                                        <td>{{='{:,.2f}'.format(row[5])}}</td>
+                                        <td align='right'><a href="#" class="btn btn-danger btn-sm"
+                                                onclick="del_limit_bmp({{=i}});"><i class="fas fa-trash"></i></a></td>
+                                    </tr>
+                                    {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+
+			<div class="line line-sm mb-4"></div>
+			<a href="#" class="button button-3d m-0 tab-linker" rel="4">Previous</a>
+			<!--<a href="#" class="button button-3d m-0 float-right tab-linker" rel="3">Revisar</a>-->
+			<a class="button button-3d m-0 float-right tab-linker" rel="6" style="color: white;">Next</a>
+        </div>
+
+		<div id="ptab6">
+            <h1>BMP Constraint (Advanced)</h1>
+			<div class="criterion-note"></div>
+			<br>
+
+            <h5>Add your preferences:</h5>
+            <ul class="nav nav-pills nav-fill nav-metodos">
+                <li class="nav-item" id="developed_bmps_option">
+                    <a class="nav-link" href="#" id="btn_developed">Developed</a>
+                </li>
+                <li class="nav-item" id="septic_bmps_option">
+                    <a class="nav-link" href="#" id="btn_septic">Septic</a>
+                </li>
+                <li class="nav-item" id="natural_bmps_option">
+                    <a class="nav-link" href="#" id="btn_natural">Natural</a>
+                </li>
+                <li class="nav-item" id="update_cost_option">
+                    <a class="nav-link" href="#" id="btn_update_cost">Manure Treatment</a>
+                </li>
+                <li class="nav-item" id="prefer_option">
+                    <a class="nav-link" href="#" id="btn_prefer">Animal</a>
+                </li>
+                <li class="nav-item" id="bmp_allocation_option">
+                    <a class="nav-link" href="#" id="btn_bmp_allocation">Land Conversion</a>
+                </li>
+
+                <li class="nav-item" id="geo_bmp_allocation">
+                    <a class="nav-link" href="#" id="btn_geo_bmp_allocation">Agriculture</a>
+                </li>
+            </ul>
+			<br>
+
+			<div>
+                <!---   developed BMPs   -->
+                <div id="panel_developed">
+                    <h2>Developed BMPs </h2>
+
+                    <form action="#" enctype="multipart/form-data" method="post">
+
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Land River Segment</label>
+
+                                    <div class="col-sm-9">
+                                    <select name="lrseg" id="developed_select_lrseg" class="form-control"
+                                        onchange="developed_filterAgency();">
+                                        <option value="-1">Loading ...</option>
+                                    </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Agency</label>
+
+                                    <div class="col-sm-9">
+                                    <select name="agency" id="developed_select_agency" class="form-control"
+                                        onchange="developed_filterLoadSource();" style="width:100%;">
+                                    </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Load Source</label>
+                                    <div class="col-sm-9">
+                                    <select name="ls" id="developed_select_ls" class="form-control" style="width:100%;" >
+                                    </select>
+                                    </div>
+                                </div>
+
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="developed_bmp_id" name="developed_bmp_id"
+                                                            onchange="filter_developed_unit();">
+                                    <option value=""></option>
+
+                                    {{if 'Developed BMPs' in selected_sector_bmps_dict.keys():}}
+                                        {{bmps_ids = selected_sector_bmps_dict['Developed BMPs']}}
+                    						{{for bmp_id in bmps_ids:}}
+                    							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+                    						{{pass}}
+                    				{{pass}}
+                                </select>
+                                    <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="developed_bmp_unit" name="developed_bmp_unit" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                    
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Lower Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="developed_at_least" id="developed_at_least" placeholder="Lower Bound" value="{{='{:.0f}'.format(0.0)}}" data-class="limit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="developed_unit_1" name="developed_unit_1">Units</div>
+                    		</div>
+                        </div>
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label"> Upper Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="developed_at_most" id="developed_at_most" placeholder="Upper Bound" value="{{='{:.0f}'.format(0.0)}}" data-class="limit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="developed_unit_2" name="developed_unit_2" >Units</div>
+                    		</div>
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_developed_bmp();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_developed_table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>LRS</th>
+                                    <th>Agency</th>
+                                    <th>Load Source</th>
+                                    <th>BMP</th>
+                                    <th>Unit</th>
+                                    <th>Lower Bound</th>
+                                    <th>Upper Bound</th>
+                                </tr>
+                                </thead>
+                                <tbody id="developed_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in developed_bmps_json:}}
+                                        <tr>
+                                            <td>{{=i+1}}</td>
+                                            <td>{{=row[1]}}</td>
+                                            <td>{{=row[3]}}</td>
+                                            <td>{{=row[5]}}</td>
+                                            <td>{{=row[7]}}</td>
+                                            <td>{{=row[8]}}</td>
+                                            <td>{{=row[9]}}</td>
+                                            <td>{{=row[10]}}</td>
+                                            <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_developed_bmp({{=i}});"><i class="fas fa-trash"></i></a></td>
+                                        </tr>
+                                        {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+                        
+                        </div>
+                    </div>
+
+                </div>
+
+                
+
+
+                <!---   septic BMPs   -->
+                <div id="panel_septic">
+                    <h2>Septic BMPs </h2>
+
+                    <form action="#" enctype="multipart/form-data" method="post">
+
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Land River Segment</label>
+
+                                    <div class="col-sm-9">
+                                    <select name="lrseg" id="septic_select_lrseg" class="form-control"
+                                        onchange="septic_filterAgency();">
+                                        <option value="-1">Loading ...</option>
+                                    </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Agency</label>
+
+                                    <div class="col-sm-9">
+                                    <select name="agency" id="septic_select_agency" class="form-control"
+                                        onchange="septic_filterLoadSource();" style="width:100%;">
+                                    </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Load Source</label>
+                                    <div class="col-sm-9">
+                                    <select name="ls" id="septic_select_ls" class="form-control" style="width:100%;" >
+                                    </select>
+                                    </div>
+                                </div>
+
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="septic_bmp_id" name="septic_bmp_id"
+                                                            onchange="filter_septic_unit();">
+                                    <option value=""></option>
+
+                                    {{if 'Septic BMPs' in selected_sector_bmps_dict.keys():}}
+                                        {{bmps_ids = selected_sector_bmps_dict['Septic BMPs']}}
+                    						{{for bmp_id in bmps_ids:}}
+                    							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+                    						{{pass}}
+                    				{{pass}}
+                                </select>
+                                    <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="septic_bmp_unit" name="septic_bmp_unit" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                    
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Lower Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="septic_at_least" id="septic_at_least" placeholder="Lower Bound" value="{{='{:.0f}'.format(0.0)}}" data-class="limit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="septic_unit_1" name="septic_unit_1">Units</div>
+                    		</div>
+                        </div>
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label"> Upper Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="septic_at_most" id="septic_at_most" placeholder="Upper Bound" value="{{='{:.0f}'.format(0.0)}}" data-class="limit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="septic_unit_2" name="septic_unit_2" >Units</div>
+                    		</div>
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_septic_bmp();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_septic_table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>LRS</th>
+                                    <th>Agency</th>
+                                    <th>Load Source</th>
+                                    <th>BMP</th>
+                                    <th>Unit</th>
+                                    <th>Lower Bound</th>
+                                    <th>Upper Bound</th>
+                                </tr>
+                                </thead>
+                                <tbody id="septic_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in septic_bmps_json:}}
+                                        <tr>
+                                            <td>{{=i+1}}</td>
+                                            <td>{{=row[1]}}</td>
+                                            <td>{{=row[3]}}</td>
+                                            <td>{{=row[5]}}</td>
+                                            <td>{{=row[7]}}</td>
+                                            <td>{{=row[8]}}</td>
+                                            <td>{{=row[9]}}</td>
+                                            <td>{{=row[10]}}</td>
+                                            <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_septic_bmp({{=i}});"><i class="fas fa-trash"></i></a></td>
+                                        </tr>
+                                        {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+                        
+                        </div>
+                    </div>
+
+
+                </div>
+
+
+                <!---   natural BMPs   -->
+                <div id="panel_natural">
+                    <h2>Natural BMPs </h2>
+
+                    <form action="#" enctype="multipart/form-data" method="post">
+
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Land River Segment</label>
+
+                                    <div class="col-sm-9">
+                                    <select name="lrseg" id="natural_select_lrseg" class="form-control"
+                                        onchange="natural_filterAgency();">
+                                        <option value="-1">Loading ...</option>
+                                    </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Agency</label>
+
+                                    <div class="col-sm-9">
+                                    <select name="agency" id="natural_select_agency" class="form-control"
+                                        onchange="natural_filterLoadSource();" style="width:100%;">
+                                    </select>
+                                    </div>
+                                </div>
+                                <div class="form-group row" id="no_table_bmp_id__row">
+                                    <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Load Source</label>
+                                    <div class="col-sm-9">
+                                    <select name="ls" id="natural_select_ls" class="form-control" style="width:100%;" >
+                                    </select>
+                                    </div>
+                                </div>
+
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="natural_bmp_id" name="natural_bmp_id"
+                                                            onchange="filter_natural_unit();">
+                                    <option value=""></option>
+
+                                    {{if 'Natural BMPs' in selected_sector_bmps_dict.keys():}}
+                                        {{bmps_ids = selected_sector_bmps_dict['Natural BMPs']}}
+                    						{{for bmp_id in bmps_ids:}}
+                    							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+                    						{{pass}}
+                    				{{pass}}
+                                </select>
+                                    <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="natural_bmp_unit" name="natural_bmp_unit" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                    
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Lower Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="natural_at_least" id="natural_at_least" placeholder="Lower Bound" value="{{='{:.0f}'.format(0.0)}}" data-class="limit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="natural_unit_1" name="natural_unit_1">Units</div>
+                    		</div>
+                        </div>
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label"> Upper Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="natural_at_most" id="natural_at_most" placeholder="Upper Bound" value="{{='{:.0f}'.format(0.0)}}" data-class="limit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="natural_unit_2" name="natural_unit_2" >Units</div>
+                    		</div>
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_natural_bmp();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_natural_table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>LRS</th>
+                                    <th>Agency</th>
+                                    <th>Load Source</th>
+                                    <th>BMP</th>
+                                    <th>Unit</th>
+                                    <th>Lower Bound</th>
+                                    <th>Upper Bound</th>
+                                </tr>
+                                </thead>
+                                <tbody id="natural_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in natural_bmps_json:}}
+                                        <tr>
+                                            <td>{{=i+1}}</td>
+                                            <td>{{=row[1]}}</td>
+                                            <td>{{=row[3]}}</td>
+                                            <td>{{=row[5]}}</td>
+                                            <td>{{=row[7]}}</td>
+                                            <td>{{=row[8]}}</td>
+                                            <td>{{=row[9]}}</td>
+                                            <td>{{=row[10]}}</td>
+                                            <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_natural_bmp({{=i}});"><i class="fas fa-trash"></i></a></td>
+                                        </tr>
+                                        {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+                        
+                        </div>
+                    </div>
+
+
+                </div>
+
+
+                <!---   Manure Treatment BMP -->
+                <div id="panel_bmp_cost">
+                    <h2>Manure Treatment BMPs </h2>
+
+                    <form action="#" enctype="multipart/form-data" method="post">
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="manure_treatment_bmp_id" name="manure_treatment_bmp_id"
+                                                            onchange="filter_manure_treatment_animal_group();">
+                                    <option value=""></option>
+
+                                    {{if 'Manure Treatment BMPs' in selected_sector_bmps_dict.keys():}}
+                                        {{bmps_ids = selected_sector_bmps_dict['Manure Treatment BMPs']}}
+                    						{{for bmp_id in bmps_ids:}}
+                    							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+                    						{{pass}}
+                    				{{pass}}
+                                </select>
+                                    <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="bmp_unit3" name="bmp_unit3" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Animal Group</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="manure_treatment_group_id" name="manure_treatment_group_id"  >
+                                    <option value="-1">Loading ...</option>
+                                </select>
+                                    <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Load Source</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="manure_treatment_load_source_id" name="manure_treatment_load_source_id" >
+                                    <option value=""></option>
+                                    {{for key,value in animal_load_sources_dict.items():}}
+                                        <option value="{{=key}}">{{=value}}</option>
+                                    {{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                    
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">From County</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="manure_treatment_from_county_id" name="manure_treatment_from_county_id" >
+                                    <option value=""></option>
+                                    {{for key,value in from_county_dict.items():}}
+                                        <option value="{{=key}}">{{=value}}</option>
+                                    {{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                    
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">To County</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="manure_treatment_to_county_id" name="manure_treatment_to_county_id" >
+                                    <option value=""></option>
+                                    {{for key,value in county_dict.items():}}
+                                        <option value="{{=key}}">{{=value}}</option>
+                                    {{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                    
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Lower Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="manure_treatment_at_least" id="manure_treatment_at_least" placeholder="Lower Bound" class="form-control amount-input amount_unit_cost" value="{{='{:.0f}'.format(0.0)}}" data-class="limit" data-type="unit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="manure_treatment_unit_1" name="manure_treatment_unit_1">Units</div>
+                    		</div>
+                        </div>
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label"> Upper Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="manure_treatment_at_most" id="manure_treatment_at_most" placeholder="Upper Bound" class="form-control amount-input amount_unit_cost" value="{{='{:.0f}'.format(0.0)}}" data-class="limit" data-type="unit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="manure_treatment_unit_2" name="manure_treatment_unit_2" >Units</div>
+                    		</div>
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_manure_treatment_bmp2();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_manure_treatment_table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>BMP</th>
+                                    <th>Animal Group</th>
+                                    <th>Load Source</th>
+                                    <th>From Country</th>
+                                    <th>To Country</th>
+                                    <th>Lower Bound</th>
+                                    <th>Upper Bound</th>
+                                </tr>
+                                </thead>
+                                <tbody id="manure_treatment_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in manure_treatment_bmps_json:}}
+                                        <tr>
+                                            <td>{{=i+1}}</td>
+                                            <td>{{=row[1]}}</td>
+                                            <td>{{=row[3]}}</td>
+                                            <td>{{=row[5]}}</td>
+                                            <td>{{=row[7]}}</td>
+                                            <td>{{=row[9]}}</td>
+                                            <td>{{=row[10]}}</td>
+                                            <td>{{=row[11]}}</td>
+                                            <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_manure_treatment_bmp({{=i}});"><i class="fas fa-trash"></i></a></td>
+                                        </tr>
+                                        {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+                        
+                        </div>
+                    </div>
+
+                </div>
+
+				<!---     Land Conversion        -->
+                <div id="panel_land_conversion">
+                </div>
+
+				<!---     Animal BMPs    -->
+                <div id="panel_prefer">
+
+                    <h2>Animal BMPs </h2>
+
+                    <form action="#" enctype="multipart/form-data" method="post">
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="animal_bmp_id" name="animal_bmp_id"
+                                                            onchange="filter_animal_group();">
+                                    <option value=""></option>
+
+                                    {{if 'Animal BMPs' in selected_sector_bmps_dict.keys():}}
+                                        {{bmps_ids = selected_sector_bmps_dict['Animal BMPs']}}
+                    						{{for bmp_id in bmps_ids:}}
+                    							<option value="{{=bmp_id}}">{{=select_bmps_dict[bmp_id]}}</option>
+                    						{{pass}}
+                    				{{pass}}
+                                </select>
+                                    <span class="help-block"> </span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_price"
+                                id="no_table_price__label">Unit</label>
+                            <div class="col-sm-9">
+                                <input class="form-control string" id="bmp_unit4" name="bmp_unit4" type="text" value=""
+                                    readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Animal Group</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="animal_group_id" name="animal_group_id"  >
+                                    <option value="-1">Loading ...</option>
+                                </select>
+                                    <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Load Source</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="animal_load_source_id" name="animal_load_source_id" >
+                                    <option value=""></option>
+                                    {{for key,value in animal_load_sources_dict.items():}}
+                                        <option value="{{=key}}">{{=value}}</option>
+                                    {{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                    
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Lower Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="at_least" id="at_least" placeholder="Lower Bound" class="form-control amount-input amount_unit_cost" value="{{='{:.0f}'.format(0.0)}}" data-class="limit" data-type="unit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="animal_unit_1" name="animal_unit_1">Units</div>
+                    		</div>
+                        </div>
+                        <div class="row">
+                            <label class="form-control-label col-sm-3" for="no_table_bmp_id" id="no_table_bmp_id__label">Upper Bound</label>
+                            <div class="col-sm-3">
+                                <input type="number" name="at_most" id="at_most" placeholder="Upper Bound" class="form-control amount-input amount_unit_cost" value="{{='{:.0f}'.format(0.0)}}" data-class="limit" data-type="unit">
+                            </div>
+                    		<div class="input-group-prepend">
+                    			<div class="input-group-text" id="animal_unit_2" name="animal_unit_2">Units</div>
+                    		</div>
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_animal_bmp2();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_animal_table">
+                                <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>BMP</th>
+                                    <th>Animal Group</th>
+                                    <th>Load Source</th>
+                                    <th>Lower Bound</th>
+                                    <th>Upper Bound</th>
+                                </tr>
+                                </thead>
+                                <tbody id="animal_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in animal_bmps_json:}}
+                                        <tr>
+                                            <td>{{=i+1}}</td>
+                                            <td>{{=row[1]}}</td>
+                                            <td>{{=row[3]}}</td>
+                                            <td>{{=row[5]}}</td>
+                                            <td>{{=row[6]}}</td>
+                                            <td>{{=row[7]}}</td>
+                                            <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_animal_bmp({{=i}});"><i class="fas fa-trash"></i></a></td>
+                                        </tr>
+                                        {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+                        
+                        </div>
+                    </div>
+                </div>
+
+                <!---     BMP Allocation (limit a BMP)    -->
+                <div id="panel_bmp_allocation">
+
+                    <h2>Land Conversion</h2>
+                                    
+                    <form action="#" enctype="multipart/form-data" method="post">
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_load_source_id"
+                                id="no_table_load_source_id__label">Load Source</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="land_conversion_load_source_id" name="land_conversion_load_source_id" onchange="update_acres();" >
+                                    <option value=""></option>
+                                    {{for key, value in load_source_dict.items():}}
+                                    <option value="{{=key}}">{{=value}}</option>
+                                    {{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                    
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_load_source_id"
+                                id="no_table_load_source_id__label">Total Acres:</label>
+                            <div class="col-sm-9">
+                                <input type="number" name="land_conversion_acres" id="land_conversion_acres" placeholder="land_conversion_acres"
+                                    class="form-control" value="{{='{:.2f}'.format(0.0)}}" readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="form-group row" id="no_table_price__row">
+                            <label class="form-control-label col-sm-3" for="no_table_luc_bmp" id="no_table_land_use_change_label">Land Use
+                                Change BMP</label>
+                            <div class="col-sm-9">
+                                <select class="form-control generic-widget" id="land_conversion_bmp_id" name="land_conversion_bmp_id" onchange="update_land_conversion_cost();">
+                                    <option value=""></option>
+                                    {{for key, value in luc_bmps_dict.items():}}
+                                    <option value="{{=key}}">{{=value}}</option>
+                                    {{pass}}
+                                </select>
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                    
+                        <div class="form-group row" id="no_table_bmp_id__row">
+                            <label class="form-control-label col-sm-3" for="no_table_load_source_id"
+                                id="no_table_load_source_id__label">Price per acre:</label>
+                            <div class="col-sm-9">
+                                <input type="number" name="land_conversion_price_per_acre" id="land_conversion_price_per_acre" placeholder=""
+                                    class="form-control" value="{{='{:.2f}'.format(0.0)}}" readonly />
+                                <span class="help-block"> </span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-3">Maximum Conversion</div>
+                            <div class="col-sm-3">
+                                <input type="number" name="limit_unit" id="limit_unit" placeholder="Acres"
+                                    class="form-control amount-input amount_unit_cost" value="{{='{:.2f}'.format(0.0)}}" data-class="limit"
+                                    data-type="unit">
+                            </div>
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">%</div>
+                            </div>
+                            <div class="col-sm-3">
+                                <input type="number" name="limit_cost" id="limit_cost" placeholder="Cost"
+                                    class="form-control amount-input amount_unit_cost" value="{{='{:.2f}'.format(0.0)}}" data-class="limit"
+                                    data-type="amount">
+                            </div>
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">Acres</div>
+                            </div>
+                        
+                        </div>
+                        <div class="form-group row" id="submit_record__row">
+                            <div class="col-sm-9 col-sm-offset-3">
+                                <a href="#" class="btn btn-primary btn" onclick="add_limit_bmp();">Add</a>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bmp_limit_table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>BMP</th>
+                                        <th>Maximum Allocation (lbs)</th>
+                                        <th>Maximum Allocation ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="limit_bmp_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in land_conversion_json:}}
+                                    <tr>
+                                        <td>{{=i+1}}</td>
+                                        <td>{{=row[1]}}</td>
+                                        <td>{{=row[4]}}</td>
+                                        <td>{{=row[5]}}</td>
+                                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_limit_bmp({{=i}});"><i
+                                                    class="fas fa-trash"></i></a></td>
+                                    </tr>
+                                    {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+                        
+                        </div>
+                    </div>
+                </div>
+
+				<div id="panel_bmp_allocation2">
+
+					<table class="table" id="bmp_summary_table">
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>BMP Name</th>
+								<th>Available Acres</th>
+								<th>Mode</th>
+								<th>Maximum Allocation</th>
+							</tr>
+						</thead>
+						<tbody>
+							{{ i = 0 }}
+							{{ for row in bmp_list:}}
+							<tr>
+								<td>{{=i+1}}</td>
+								<td>{{=row[1]}}</td>
+								<td align='right'>{{="{:,.2f}".format(float(row[2]))}}</td>
+
+								<td>
+									<!-- <div class="form-check">
+                                            <label class="form-check-label">
+                                              <input type="radio" class="form-check-input mode-radio" id="mode_fixed_{{=i}}" name="mode_{{=i}}" value="Fixed" checked data-index="{{=i}}"> Fixed
+                                            </label>
+                                        </div> -->
+
+									<div class="form-check">
+										<label class="form-check-label">
+											<input type="radio" class="form-check-input mode-radio"
+												id="mode_acres_{{=i}}" name="mode_{{=i}}" value="Acres"
+												data-index="{{=i}}" checked>Acres
+										</label>
+									</div>
+
+									<div class="form-check">
+										<label class="form-check-label">
+											<input type="radio" class="form-check-input mode-radio"
+												id="mode_cost_{{=i}}" name="mode_{{=i}}" value="Cost"
+												data-index="{{=i}}">Cost
+										</label>
+									</div>
+
+								</td>
+
+								<td><input type="number" name="default_allocation_{{=i}}" id="default_allocation_{{=i}}"
+										value="{{=row[2]}}" class="form-control amount-input amount_percentage_val"
+										min="0" placeholder="0" step=".01" data-index="{{=i}}"></td>
+							</tr>
+							{{ i = i+1 }}
+							{{pass}}
+						</tbody>
+					</table>
+				</div>
+
+
+                <!---     Geography/BMP Allocation      -->
+                <div id="panel_geo_bmp_allocation">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Agriculture</h2>
+                            <form action="" id="form_bounded_bmp_detailed" method="POST">
+                                <div class="form-group">
+                                    <label for="">Land River Segment</label>
+                                    <select name="lrseg" id="select_lrseg" class="form-control"
+                                        onchange="filterAgency();">
+                                        <option value="-1">Loading ...</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" id="agency_panel">
+                                    <label for="">Agency</label>
+                                    <select name="agency" id="select_agency" class="form-control"
+                                        onchange="filterLoadSource();" style="width:100%;">
+                                    </select>
+                                </div>
+
+                                <div class="form-group" id="ls_panel">
+                                    <label for="">Load Source</label>
+                                    <select name="ls" id="select_ls" class="form-control" style="width:100%;"
+                                        onchange="filterBmpGroups();">
+                                    </select>
+                                </div>
+
+                                <div class="form-group" id="bmp_groups_panel">
+                                    <label for="">BMP Groups</label>
+                                    <select name="bmp_groups" id="select_bmp_groups" class="form-control"
+                                        style="width:100%;" onchange="showAmountInput();">
+                                    </select>
+                                </div>
+
+                                <h5>BMP list</h5>
+                                <div><b>BMP Group Max Amount (acres):</b> <span id="max_amount"></span></div>
+                                <br><br>
+                                <div id="amount_input" style="max-height: 500px; overflow-y: scroll;">
+
+                                </div>
+
+
+                                <input type="hidden" name="custom_rows" id="custom_rows" value="">
+
+                                <input type="submit" value="Add" class="btn btn-secondary">
+
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" id="bounded_bmp_detailed_table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>LRSeg</th>
+                                        <th>Agency</th>
+                                        <th>Load Source</th>
+                                        <th>Bmp</th>
+                                        <th>Min Amount</th>
+                                        <th>Max Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bounded_bmp_detailed_tbody">
+                                    {{ i = 0 }}
+                                    {{ for row in bounded_bmp_detailed_json:}}
+                                    <tr>
+                                        <td>{{=i+1}}</td>
+                                        <td>{{=row[1]}}</td>
+                                        <td>{{=row[3]}}</td>
+                                        <td>{{=row[5]}}</td>
+                                        <td>{{=row[7]}}</td>
+                                        <td align='right'>{{='{:,.2f}'.format(row[8])}}</td>
+                                        <td align='right'>{{='{:,.2f}'.format(row[10])}}</td>
+                                        <td align='right'><a href="#" class="btn btn-danger btn-sm"
+                                                onclick="del_bounded_bmp_detailed({{=i}});"><i
+                                                    class="fas fa-trash"></i></a></td>
+                                    </tr>
+                                    {{ i = i+1 }}
+                                    {{pass}}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+				<br>
+			</div>
+
+			<div class="line line-sm mb-4">
+			<a href="#" class="button button-3d m-0 tab-linker" rel="5">Previous</a>
+            </div>
+		</div>
+
+		<!-- <a href="#" class="button button-3d m-0 tab-linker" rel="2">Previous</a> -->
+		<!-- <a href="#" class="button button-3d m-0 float-right tab-linker" rel="3">Optimize</a> -->
+        <div class="line line-sm mb-4"></div>
+
+		<!-- <button id="btn_optimize" class="button button-3d float-right btn-lg" onclick="optimize();">Optimize</button> --> 
+		<!-- <button id="btn_optimize" class="button button-3d float-right btn-lg" onclick="display_cost_bmp();">display</button> -->
+					<a href="#myModal1" data-lightbox="inline" class="btn btn-secondary btn-lg" onclick="display_cost_bmp();">Optimize</a>
+
+					<!-- Modal -->
+					<div class="modal1 mfp-hide" id="myModal1">
+						<div class="block mx-auto" style="background-color: #FFF; max-width: 500px;">
+							<div class="feature-box fbox-center fbox-effect fbox-lg border-bottom-0 mb-0" style="padding: 40px;">
+								<div class="fbox-content">
+									<h3>Accepted costs for BMPs</h3>
+                                    <table class="table" id="display_bmp_cost_table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>BMP</th>
+                                                <th>Cost per Unit ($)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="display_cost_bmp_tbody">
+                                        </tbody>
+                                    </table>
+								</div>
+							</div>
+							<div class="section center m-0" style="padding: 30px;">
+								<a href="#" class="button" onClick="$.magnificPopup.close();return false;">Cancel</a>
+								<a href="#" class="button" onClick="$.magnificPopup.close();optimize();return false;">Accept</a>
+							</div>
+						</div>
+					</div>
+
+	</div>
+</div>
+
+<script>
+var arr_saved_bmps = [];
+
+    function save_bmps(){
+		var ss_id = "{{=ss_id}}";
+		console.dir($("#optgroup"));
+		console.dir($("#optgroup_to"));
+		console.log($("#optgroup")["0"].length);
+		console.log($("#optgroup_to")["0"].length);
+
+		console.log("en save");
+		console.log(arr_saved_bmps);
+		var arr_optgroup_agri= [];
+		var arr_optgroup_animal = [];
+		var arr_optgroup_dev = [];
+		var arr_optgroup_manure = [];
+		var arr_optgroup_natural = [];
+		var arr_optgroup_septic= [];
+
+        const my_bmps = JSON.parse("{{=bmps_json}}".replace(/&quot;/g,'"'));
+        $("#bmp_id").empty();
+        $("#bmp_id2").empty();
+		for (var i=0; i < $("#optgroup")["0"].length; i++){
+			var tmp_val = $("#optgroup")["0"][i];
+			var group_name = tmp_val.parentNode.label;
+			if (group_name == "Agriculture BMPs") {
+				arr_optgroup_agri.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Animal BMPs") {
+				arr_optgroup_animal.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Developed BMPs") {
+				arr_optgroup_dev.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Manure Treatment BMPs") {
+				arr_optgroup_manure.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Natural BMPs") {
+				arr_optgroup_natural.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Septic BMPs") {
+				arr_optgroup_septic.push(parseInt(tmp_val.value));
+			}
+
+		}
+
+		var arr_optgroup_to = [];
+		var arr_optgroup_to_agri= [];
+		var arr_optgroup_to_animal = [];
+		var arr_optgroup_to_dev = [];
+		var arr_optgroup_to_manure = [];
+		var arr_optgroup_to_natural = [];
+		var arr_optgroup_to_septic= [];
+		for (var i=0; i < $("#optgroup_to")["0"].length; i++){
+			var tmp_val = $("#optgroup_to")["0"][i];
+			var group_name = tmp_val.parentNode.label;
+			if (group_name == "Agriculture BMPs") {
+				arr_optgroup_to_agri.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Animal BMPs") {
+				arr_optgroup_to_animal.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Developed BMPs") {
+				arr_optgroup_to_dev.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Manure Treatment BMPs") {
+				arr_optgroup_to_manure.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Natural BMPs") {
+				arr_optgroup_to_natural.push(parseInt(tmp_val.value));
+			}
+			else if (group_name == "Septic BMPs") {
+				arr_optgroup_to_septic.push(parseInt(tmp_val.value));
+			}
+            //<optgroup label="{{=key_sector}}">
+		}
+        console.dir(arr_optgroup_to_agri);
+        if (arr_optgroup_to_agri.length > 0){
+            var group = $('<optgroup label="Agriculture BMPs" />');
+            var group2 = $('<optgroup label="Agriculture BMPs" />');
+            for (var i=0; i < arr_optgroup_to_agri.length; i++){
+                $('<option />').html(my_bmps[arr_optgroup_to_agri[i]], arr_optgroup_to_agri[i]).appendTo(group);
+                $('<option />').html(my_bmps[arr_optgroup_to_agri[i]], arr_optgroup_to_agri[i]).appendTo(group2);
+                //$('#bmp_id').append(new Option(my_bmps[arr_optgroup_to_agri[i]], arr_optgroup_to_agri[i]));
+            }
+            group.appendTo($("#bmp_id"));
+            group2.appendTo($("#bmp_id2"));
+
+        }
+
+        $('#animal_group_id').empty();
+        if (arr_optgroup_to_animal.length > 0){
+            var group = $('<optgroup label="Animal BMPs" />');
+            var group2 = $('<optgroup label="Animal BMPs" />');
+            for (var i=0; i < arr_optgroup_to_animal.length; i++){
+                $('<option />').html(my_bmps[arr_optgroup_to_animal[i]], arr_optgroup_to_animal[i]).appendTo(group);
+                $('<option />').html(my_bmps[arr_optgroup_to_animal[i]], arr_optgroup_to_animal[i]).appendTo(group2);
+            }
+            group.appendTo($("#bmp_id"));
+            group2.appendTo($("#bmp_id2"));
+
+            for (var i=0; i < arr_optgroup_to_animal.length; i++){
+                var idx = arr_optgroup_to_animal[i];
+                $('#animal_group_id').append(new Option(my_bmps[idx], idx));
+            }
+        }
+
+        if (arr_optgroup_to_dev.length > 0){
+            var group = $('<optgroup label="Developed BMPs" />');
+            var group2 = $('<optgroup label="Developed BMPs" />');
+            for (var i=0; i < arr_optgroup_to_dev.length; i++){
+                $('<option />').html(my_bmps[arr_optgroup_to_dev[i]], arr_optgroup_to_dev[i]).appendTo(group);
+                $('<option />').html(my_bmps[arr_optgroup_to_dev[i]], arr_optgroup_to_dev[i]).appendTo(group2);
+            }
+            group.appendTo($("#bmp_id"));
+            group2.appendTo($("#bmp_id2"));
+        }
+
+        if (arr_optgroup_to_manure.length > 0){
+            var group = $('<optgroup label="Manure Treatment BMPs" />');
+            var group2 = $('<optgroup label="Manure Treatment BMPs" />');
+            for (var i=0; i < arr_optgroup_to_manure.length; i++){
+                $('<option />').html(my_bmps[arr_optgroup_to_manure[i]], arr_optgroup_to_manure[i]).appendTo(group);
+                $('<option />').html(my_bmps[arr_optgroup_to_manure[i]], arr_optgroup_to_manure[i]).appendTo(group2);
+            }
+            group.appendTo($("#bmp_id"));
+            group2.appendTo($("#bmp_id2"));
+        }
+
+        if (arr_optgroup_to_natural.length > 0){
+            var group = $('<optgroup label="Natural BMPs" />');
+            var group2 = $('<optgroup label="Natural BMPs" />');
+            for (var i=0; i < arr_optgroup_to_natural.length; i++){
+                $('<option />').html(my_bmps[arr_optgroup_to_natural[i]], arr_optgroup_to_natural[i]).appendTo(group);
+                $('<option />').html(my_bmps[arr_optgroup_to_natural[i]], arr_optgroup_to_natural[i]).appendTo(group2);
+            }
+            group.appendTo($("#bmp_id"));
+            group2.appendTo($("#bmp_id2"));
+        }
+        if (arr_optgroup_to_septic.length > 0){
+            var group = $('<optgroup label="Septic BMPs" />');
+            var group2 = $('<optgroup label="Septic BMPs" />');
+            for (var i=0; i < arr_optgroup_to_septic.length; i++){
+                $('<option />').html(my_bmps[arr_optgroup_to_septic[i]], arr_optgroup_to_septic[i]).appendTo(group);
+                $('<option />').html(my_bmps[arr_optgroup_to_septic[i]], arr_optgroup_to_septic[i]).appendTo(group2);
+            }
+            group.appendTo($("#bmp_id"));
+            group2.appendTo($("#bmp_id2"));
+        }
+
+		/*
+		for (var option of document.getElementById("optgroup_to").options) {
+		    document.getElementById("container").append(option.value + ' ');
+		}
+		*/
+        $.ajax({
+			url: "{{=URL('user','bmp_selector_save')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+				arr_optgroup_agri:JSON.stringify(arr_optgroup_agri), 
+				arr_optgroup_animal:JSON.stringify(arr_optgroup_animal), 
+				arr_optgroup_dev:JSON.stringify(arr_optgroup_dev), 
+				arr_optgroup_manure:JSON.stringify(arr_optgroup_manure), 
+				arr_optgroup_natural:JSON.stringify(arr_optgroup_natural), 
+				arr_optgroup_septic:JSON.stringify(arr_optgroup_septic), 
+				arr_optgroup_to_agri:JSON.stringify(arr_optgroup_to_agri), 
+				arr_optgroup_to_animal:JSON.stringify(arr_optgroup_to_animal), 
+				arr_optgroup_to_dev:JSON.stringify(arr_optgroup_to_dev), 
+				arr_optgroup_to_manure:JSON.stringify(arr_optgroup_to_manure), 
+				arr_optgroup_to_natural:JSON.stringify(arr_optgroup_to_natural), 
+				arr_optgroup_to_septic:JSON.stringify(arr_optgroup_to_septic), 
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    $('#container').empty();
+                }
+			},
+			error: function() {
+				console.log("Error adding cost of bmp.");
+				
+			}
+		});
+    };
+    
+	function optimize(){
+		var ss_id = "{{=ss_id}}";
+        var nitrogen_percentage =  $("#nitrogen_percentage").val();
+        var phosphorus_percentage =  $("#phosphorus_percentage").val();
+        var sediments_percentage =  $("#sediments_percentage").val();
+        var total_dollars = $("#total_dollars").val();
+        var total_acres = $("#total_acres_percentage").val();
+
+        /*
+        var nitrogen_proposed_amount = $("#nitrogen_proposed_amount").val();
+        var phosphorus_proposed_amount = $("#phosphorus_proposed_amount").val();
+        var sediments_proposed_amount = $("#sediments_proposed_amount").val();
+		var mode_nitrogen = $("input[name='mode_nitrogen']:checked").val();
+		var mode_phosphorus = $("input[name='mode_phosphorus']:checked").val();
+		var mode_sediments = $("input[name='mode_sediments']:checked").val();
+        */
+
+		if(nitrogen_proposed_amount !=""){
+			$("#btn_optimize").text("Optimizing...");
+
+			$.ajax({
+				url: "{{=URL('user','send_to_optimize')}}",
+				method: "POST",
+				data:{
+					ss_id:ss_id,
+					nitrogen:nitrogen_percentage,
+					phosphorus:phosphorus_percentage,
+					sediments:sediments_percentage,
+					total_dollars:total_dollars,
+					total_acres:total_acres,
+				},
+				success: function(resp){
+					console.dir(resp);
+					//$("#products_content").empty();
+					if(resp !=""){
+						// SHOW SUCCESS ALERT
+						$("#alert_sucess_opt").show();
+						$("#alert_sucess_opt").addClass('show');
+					}else{
+						$("#alert_bad_opt").addClass('show');
+						$("#alert_bad_opt").show();
+					}
+					
+
+					$("#btn_optimize").text("Optimizing");
+				},
+				error: function() {
+					console.log("Search error");
+
+					$("#alert_bad_opt").addClass('show');
+					$("#alert_bad_opt").show();
+				}
+			});
+		}
+	
+	}
+
+
+	function hidePanels(){
+		$("#panel_bmp_cost").hide();
+		$("#panel_prefer").hide();
+		$("#panel_geo_bmp_allocation").hide();
+		$("#panel_bmp_allocation").hide();
+		$("#panel_bmp_allocation2").hide();
+		$("#panel_land_conversion").hide();
+		$("#panel_developed").hide();
+		$("#panel_septic").hide();
+		$("#panel_natural").hide();
+	}
+
+	function resetMenu(){
+		$("#btn_geo_bmp_allocation").removeClass('active');
+		$("#btn_bmp_allocation").removeClass('active');
+		$("#btn_bmp_allocation2").removeClass('active');
+		$("#btn_update_cost").removeClass('active');
+		$("#btn_prefer").removeClass('active');
+		$("#btn_land_conversion").removeClass('active');
+		$("#btn_developed").removeClass('active');
+		$("#btn_septic").removeClass('active');
+		$("#btn_natural").removeClass('active');
+	}
+
+
+/*
+* Btns 
+*/
+
+	$("#btn_developed").click(function() {
+		hidePanels();
+		$("#panel_developed").show();
+		resetMenu();
+		$(this).addClass('active');
+
+	});
+
+	$("#btn_septic").click(function() {
+		hidePanels();
+		$("#panel_septic").show();
+		resetMenu();
+		$(this).addClass('active');
+
+	});
+
+	$("#btn_natural").click(function() {
+		hidePanels();
+		$("#panel_natural").show();
+		resetMenu();
+		$(this).addClass('active');
+
+	});
+
+	$("#btn_update_cost").click(function() {
+		hidePanels();
+		$("#panel_bmp_cost").show();
+		resetMenu();
+		$(this).addClass('active');
+
+	});
+
+	$("#btn_prefer").click(function() {
+		hidePanels();
+		$("#panel_prefer").show();
+		
+
+		$("#input_doi").val("");
+
+		resetMenu();
+		$(this).addClass('active');
+
+	});
+
+	$("#btn_land_conversion").click(function() {
+		hidePanels();
+		$("#panel_land_conversion").show();
+		resetMenu();
+		$(this).addClass('active');
+
+	});
+
+
+	$("#btn_bmp_allocation").click(function() {
+		hidePanels();
+		$("#panel_bmp_allocation").show();
+		$("#from_year").val("");
+		$("#to_year").val("");
+		resetMenu();
+		$(this).addClass('active');
+		
+	});
+
+	$("#btn_bmp_allocation2").click(function() {
+		hidePanels();
+		$("#panel_bmp_allocation2").show();
+		resetMenu();
+		$(this).addClass('active');
+		
+	});
+	
+	$("#btn_geo_bmp_allocation").click(function() {
+		hidePanels();
+		$("#panel_geo_bmp_allocation").show();
+		resetMenu();
+		$(this).addClass('active');
+
+	});
+
+  /*
+
+* MISC functions
+*/
+	function hide_doi_alerts(){
+		$("#alert_sucess_opt").hide();
+		$("#alert_bad_opt").hide();	
+	}
+
+	
+	/*
+	*	INIT CONTROLS
+	*/
+	$("#products_warning").hide();
+
+	hide_doi_alerts();
+
+	// HIDE PANELS
+	hidePanels();
+	
+	//loadDocTypes();
+
+
+	/*************************************************
+	*	PRICE/COSTS BMPS cost_bmp2	
+	**************************************************/
+    function del_cost_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_cost_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#cost_bmp_tbody').empty();
+                    for(var i=0; i<resp.price_bmps.length;i++){
+                        const row = resp.price_bmps[i];
+
+                        $('#cost_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[2]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_cost_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+    function update_cost(){
+        var bmp_id = $("#bmp_id").val();
+        const my_bmps = JSON.parse("{{=bmp_dict}}".replace(/&quot;/g,'"'));
+        const my_bmp_unit = JSON.parse("{{=bmp_unit}}".replace(/&quot;/g,'"'));
+        $("#cost").val(my_bmps[bmp_id][1]);
+        $("#bmp_unit").val(my_bmp_unit[bmp_id]);
+
+    }
+    function add_cost_bmp(){
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#bmp_id").val();
+        const my_bmps = JSON.parse("{{=bmp_dict}}".replace(/&quot;/g,'"'));
+        var bmp_text = $("#bmp_id option:selected").html();
+        var new_cost= $("#new_cost").val();
+        var former_cost= $("#cost").val();
+        $("#new_cost").val("");
+
+        $.ajax({
+			url: "{{=URL('user','add_cost_bmp2')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_id,
+                bmp_text:bmp_text,
+                former_cost:former_cost,
+                new_cost:new_cost
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#cost_bmp_tbody').empty();
+                    for(var i=0; i<resp.price_bmps.length;i++){
+                        const row = resp.price_bmps[i];
+
+                        $('#cost_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[2]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_cost_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding cost of bmp.");
+				
+			}
+		});
+    }
+
+    function display_cost_bmp(){
+		var ss_id = "{{=ss_id}}";
+
+        $.ajax({
+			url: "{{=URL('user','display_cost_bmp')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#display_cost_bmp_tbody').empty();
+                    for(var i=0; i<resp.price_bmps.length;i++){
+                        const row = resp.price_bmps[i];
+                        console.log(row[1])
+                        $('#display_cost_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        
+                        <td>`+row[1]+`</td>
+                        <td>`+row[2]+`</td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding cost of bmp.");
+				
+			}
+		});
+    }
+
+	/*************************************************
+	* Manure Treatment - manure_treatment_bmp	
+	**************************************************/
+	
+    function filter_manure_treatment_animal_group(){
+        var bmp_id = $("#manure_treatment_bmp_id").val();
+        const bmps_json1 = JSON.parse("{{=bmp_animal_json1}}".replace(/&quot;/g,'"'));
+        const bmps_json2 = JSON.parse("{{=bmp_animal_json2}}".replace(/&quot;/g,'"'));
+        const animal_group = JSON.parse("{{=animal_group_dict}}".replace(/&quot;/g,'"'));
+        var selected_animal_group = bmps_json2[bmps_json1[bmp_id]];
+        $('#manure_treatment_group_id').empty();
+        for (let i=0; i< selected_animal_group.length; i++) {
+            var idx = selected_animal_group[i];
+            $('#manure_treatment_group_id').append(new Option(animal_group[idx], idx));
+        }
+        
+        const my_bmp_unit = JSON.parse("{{=bmp_unit}}".replace(/&quot;/g,'"'));
+        $("#bmp_unit3").val(my_bmp_unit[bmp_id]);
+
+        $("#manure_treatment_unit_1").html(my_bmp_unit[bmp_id]);
+        $("#manure_treatment_unit_2").html(my_bmp_unit[bmp_id]);
+    }
+
+    function filter_developed_unit(){
+        var bmp_id = $("#developed_bmp_id").val();
+        const my_bmp_unit = JSON.parse("{{=bmp_unit}}".replace(/&quot;/g,'"'));
+        $("#developed_bmp_unit").val(my_bmp_unit[bmp_id]);
+
+        $("#developed_unit_1").html(my_bmp_unit[bmp_id]);
+        $("#developed_unit_2").html(my_bmp_unit[bmp_id]);
+    }
+    function filter_septic_unit(){
+        var bmp_id = $("#septic_bmp_id").val();
+        const my_bmp_unit = JSON.parse("{{=bmp_unit}}".replace(/&quot;/g,'"'));
+        $("#septic_bmp_unit").val(my_bmp_unit[bmp_id]);
+
+        $("#septic_unit_1").html(my_bmp_unit[bmp_id]);
+        $("#septic_unit_2").html(my_bmp_unit[bmp_id]);
+    }
+    function filter_natural_unit(){
+        var bmp_id = $("#natural_bmp_id").val();
+        const my_bmp_unit = JSON.parse("{{=bmp_unit}}".replace(/&quot;/g,'"'));
+        $("#natural_bmp_unit").val(my_bmp_unit[bmp_id]);
+
+        $("#natural_unit_1").html(my_bmp_unit[bmp_id]);
+        $("#natural_unit_2").html(my_bmp_unit[bmp_id]);
+    }
+    function del_manure_treatment_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_manure_treatment_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#manure_treatment_bmp_tbody').empty();
+                    for(var i=0; i<resp.manure_treatment_bmps.length;i++){
+                        const row = resp.manure_treatment_bmps[i];
+
+                        $('#manure_treatment_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td>`+row[11]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_manure_treatment_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+    function add_developed_bmp(){
+        var developed_select_lrseg = $("#developed_select_lrseg").val();
+        var developed_select_lrseg_text = $("#developed_select_lrseg option:selected").html();
+        var developed_select_agency = $("#developed_select_agency").val();
+        var developed_select_agency_text = $("#developed_select_agency option:selected").html();
+        var developed_select_ls = $("#developed_select_ls").val();
+        var developed_select_ls_text = $("#developed_select_ls option:selected").html();
+
+        var developed_bmp_unit = $("#developed_bmp_unit").val();
+
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#developed_bmp_id").val();
+        console.log(bmp_id);
+        var bmp_text = $("#developed_bmp_id option:selected").html();
+        console.log(bmp_text);
+        var at_least = $("#developed_at_least").val();
+        console.log(at_least);
+        var at_most = $("#developed_at_most").val();
+        console.log(at_most);
+        console.log(bmp_text);
+        $.ajax({
+			url: "{{=URL('user','add_developed')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_id,
+                bmp_text:bmp_text,
+                at_least:at_least,
+                at_most:at_most,
+                developed_select_lrseg:developed_select_lrseg,
+                developed_select_lrseg_text:developed_select_lrseg_text,
+                developed_select_agency:developed_select_agency,
+                developed_select_agency_text:developed_select_agency_text,
+                developed_select_ls:developed_select_ls, 
+                developed_select_ls_text:developed_select_ls_text,
+                developed_bmp_unit:developed_bmp_unit, 
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#developed_bmp_tbody').empty();
+                    for(var i=0; i<resp.developed_bmps.length;i++){
+                        const row = resp.developed_bmps[i];
+
+                        $('#developed_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[8]+`</td>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_developed_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding developed of bmp.");
+				
+			}
+		});
+    }
+function del_developed_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_developed_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#developed_bmp_tbody').empty();
+                    for(var i=0; i<resp.developed_bmps.length;i++){
+                        const row = resp.developed_bmps[i];
+
+                        $('#developed_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[6]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[8]+`</bd>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_developed_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+    function add_septic_bmp(){
+        var septic_select_lrseg = $("#septic_select_lrseg").val();
+        var septic_select_lrseg_text = $("#septic_select_lrseg option:selected").html();
+        var septic_select_agency = $("#septic_select_agency").val();
+        var septic_select_agency_text = $("#septic_select_agency option:selected").html();
+        var septic_select_ls = $("#septic_select_ls").val();
+        var septic_select_ls_text = $("#septic_select_ls option:selected").html();
+
+        var septic_bmp_unit = $("#septic_bmp_unit").val();
+
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#septic_bmp_id").val();
+        console.log(bmp_id);
+        var bmp_text = $("#septic_bmp_id option:selected").html();
+        console.log(bmp_text);
+        var at_least = $("#septic_at_least").val();
+        console.log(at_least);
+        var at_most = $("#septic_at_most").val();
+        console.log(at_most);
+        console.log(bmp_text);
+        $.ajax({
+			url: "{{=URL('user','add_septic')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_id,
+                bmp_text:bmp_text,
+                at_least:at_least,
+                at_most:at_most,
+                septic_select_lrseg:septic_select_lrseg,
+                septic_select_lrseg_text:septic_select_lrseg_text,
+                septic_select_agency:septic_select_agency,
+                septic_select_agency_text:septic_select_agency_text,
+                septic_select_ls:septic_select_ls, 
+                septic_select_ls_text:septic_select_ls_text,
+                septic_bmp_unit:septic_bmp_unit, 
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#septic_bmp_tbody').empty();
+                    for(var i=0; i<resp.septic_bmps.length;i++){
+                        const row = resp.septic_bmps[i];
+
+                        $('#septic_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[8]+`</td>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_septic_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding septic of bmp.");
+				
+			}
+		});
+    }
+function del_septic_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_septic_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#septic_bmp_tbody').empty();
+                    for(var i=0; i<resp.septic_bmps.length;i++){
+                        const row = resp.septic_bmps[i];
+
+                        $('#septic_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[6]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[8]+`</bd>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_septic_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+    function add_natural_bmp(){
+        var natural_select_lrseg = $("#natural_select_lrseg").val();
+        var natural_select_lrseg_text = $("#natural_select_lrseg option:selected").html();
+        var natural_select_agency = $("#natural_select_agency").val();
+        var natural_select_agency_text = $("#natural_select_agency option:selected").html();
+        var natural_select_ls = $("#natural_select_ls").val();
+        var natural_select_ls_text = $("#natural_select_ls option:selected").html();
+
+        var natural_bmp_unit = $("#natural_bmp_unit").val();
+
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#natural_bmp_id").val();
+        console.log(bmp_id);
+        var bmp_text = $("#natural_bmp_id option:selected").html();
+        console.log(bmp_text);
+        var at_least = $("#natural_at_least").val();
+        console.log(at_least);
+        var at_most = $("#natural_at_most").val();
+        console.log(at_most);
+        console.log(bmp_text);
+        $.ajax({
+			url: "{{=URL('user','add_natural')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_id,
+                bmp_text:bmp_text,
+                at_least:at_least,
+                at_most:at_most,
+                natural_select_lrseg:natural_select_lrseg,
+                natural_select_lrseg_text:natural_select_lrseg_text,
+                natural_select_agency:natural_select_agency,
+                natural_select_agency_text:natural_select_agency_text,
+                natural_select_ls:natural_select_ls, 
+                natural_select_ls_text:natural_select_ls_text,
+                natural_bmp_unit:natural_bmp_unit, 
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#natural_bmp_tbody').empty();
+                    for(var i=0; i<resp.natural_bmps.length;i++){
+                        const row = resp.natural_bmps[i];
+
+                        $('#natural_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[8]+`</td>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_natural_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding natural of bmp.");
+				
+			}
+		});
+    }
+function del_natural_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_natural_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#natural_bmp_tbody').empty();
+                    for(var i=0; i<resp.natural_bmps.length;i++){
+                        const row = resp.natural_bmps[i];
+
+                        $('#natural_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[6]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[8]+`</bd>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_natural_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+    function add_manure_treatment_bmp2(){
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#manure_treatment_bmp_id").val();
+        var bmp_text = $("#manure_treatment_bmp_id option:selected").html();
+        var animal_group_id = $("#manure_treatment_group_id").val();
+        var animal_group_text = $("#manure_treatment_group_id option:selected").html();
+        var animal_load_source_id = $("#manure_treatment_load_source_id").val();
+        var animal_load_source_text = $("#manure_treatment_load_source_id option:selected").html();
+        var from_county_id = $("#manure_treatment_from_county_id").val();
+        var from_county_text= $("#manure_treatment_from_county_id option:selected").html();
+        var to_county_id = $("#manure_treatment_to_county_id").val();
+        var to_county_text= $("#manure_treatment_to_county_id option:selected").html();
+        var at_least = $("#manure_treatment_at_least").val();
+        var at_most = $("#manure_treatment_at_most").val();
+
+        $.ajax({
+			url: "{{=URL('user','add_manure_treatment_bmp')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_id,
+                bmp_text:bmp_text,
+                animal_group_id:animal_group_id,
+                animal_group_text:animal_group_text,
+                animal_load_source_id:animal_load_source_id,
+                animal_load_source_text:animal_load_source_text,
+                from_county_id:from_county_id,
+                from_county_text:from_county_text,
+                to_county_id:to_county_id,
+                to_county_text:to_county_text,
+                at_least:at_least,
+                at_most:at_most
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#manure_treatment_bmp_tbody').empty();
+                    for(var i=0; i<resp.manure_treatment_bmps.length;i++){
+                        const row = resp.manure_treatment_bmps[i];
+
+                        $('#manure_treatment_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td>`+row[9]+`</td>
+                        <td>`+row[10]+`</td>
+                        <td>`+row[11]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_manure_treatment_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding animal of bmp.");
+				
+			}
+		});
+    }
+    /**********************************************
+     * Animal BMPs
+     * *************************************/
+    function del_animal_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_animal_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#animal_bmp_tbody').empty();
+                    for(var i=0; i<resp.animal_bmps.length;i++){
+                        const row = resp.animal_bmps[i];
+
+                        $('#animal_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[6]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_animal_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+
+    function filter_animal_group(){
+        var bmp_id = $("#animal_bmp_id").val();
+        const bmps_json1 = JSON.parse("{{=bmp_animal_json1}}".replace(/&quot;/g,'"'));
+        const bmps_json2 = JSON.parse("{{=bmp_animal_json2}}".replace(/&quot;/g,'"'));
+        const animal_group = JSON.parse("{{=animal_group_dict}}".replace(/&quot;/g,'"'));
+        var selected_animal_group = bmps_json2[bmps_json1[bmp_id]];
+        $('#animal_group_id').empty();
+        for (let i=0; i< selected_animal_group.length; i++) {
+            var idx = selected_animal_group[i];
+            $('#animal_group_id').append(new Option(animal_group[idx], idx));
+        }
+
+        const my_bmp_unit = JSON.parse("{{=bmp_unit}}".replace(/&quot;/g,'"'));
+        $("#bmp_unit4").val(my_bmp_unit[bmp_id]);
+
+        $("#animal_unit_1").text(my_bmp_unit[bmp_id]);
+        $("#animal_unit_2").text(my_bmp_unit[bmp_id]);
+    }
+
+    function add_animal_bmp2(){
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#animal_bmp_id").val();
+        var bmp_text = $("#animal_bmp_id option:selected").html();
+        var animal_group_id = $("#animal_group_id").val();
+        var animal_group_text = $("#animal_group_id option:selected").html();
+        var animal_load_source_id = $("#animal_load_source_id").val();
+        var animal_load_source_text = $("#animal_load_source_id option:selected").html();
+        var at_least = $("#at_least").val();
+        var at_most = $("#at_most").val();
+
+        $.ajax({
+			url: "{{=URL('user','add_animal_bmp')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_id,
+                bmp_text:bmp_text,
+                animal_group_id:animal_group_id,
+                animal_group_text:animal_group_text,
+                animal_load_source_id:animal_load_source_id,
+                animal_load_source_text:animal_load_source_text,
+                at_least:at_least,
+                at_most:at_most
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#animal_bmp_tbody').empty();
+                    for(var i=0; i<resp.animal_bmps.length;i++){
+                        const row = resp.animal_bmps[i];
+
+                        $('#animal_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[6]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_animal_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding animal of bmp.");
+				
+			}
+		});
+    }
+
+	/*************************************************
+	*	EXCLUDE/PREFER - adjust_bmp
+	**************************************************/
+
+    function del_adjust_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_adjust_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#adjust_bmp_tbody').empty();
+                    for(var i=0; i<resp.adjust_bmps.length;i++){
+                        const row = resp.adjust_bmps[i];
+
+                        $('#adjust_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[2]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_adjust_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+    function update_adjust(){
+        var bmp_id = $("#adjust_bmp_id").val();
+        var bmp_list = JSON.parse(bmp_id)
+        $("#adjust").val(bmp_list[1]);
+    }
+    function add_adjust_bmp(){
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#adjust_bmp_id").val();
+        var bmp_list = JSON.parse(bmp_id)
+        var bmp_text = $("#adjust_bmp_id option:selected").html();
+        var exclude_prefer_text = $("#exclude_prefer_id").val();
+
+        $.ajax({
+			url: "{{=URL('user','add_adjust_bmp2')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_list[0],
+                bmp_text:bmp_text,
+                exclude_prefer_text:exclude_prefer_text
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#adjust_bmp_tbody').empty();
+                    for(var i=0; i<resp.adjust_bmps.length;i++){
+                        const row = resp.adjust_bmps[i];
+
+                        $('#adjust_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[2]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_adjust_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding adjust of bmp.");
+				
+			}
+		});
+    }
+
+
+
+	/*************************************************
+	*	BMP ALLOCATION (limit_bmps)
+	**************************************************/
+
+    function del_limit_bmp(index){
+        $.ajax({
+			url: "{{=URL('user','del_limit_bmp', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#limit_bmp_tbody').empty();
+                    for(var i=0; i<resp.limit_bmps.length;i++){
+                        const row = resp.limit_bmps[i];
+
+                        $('#limit_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[4]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_limit_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+
+    function update_cost2(){
+        var bmp_id = $("#bmp_id2").val();
+
+        const my_bmps = JSON.parse("{{=bmp_dict}}".replace(/&quot;/g,'"'));
+        $("#cost2").val(my_bmps[bmp_id][1]);
+
+        const my_bmp_unit = JSON.parse("{{=bmp_unit}}".replace(/&quot;/g,'"'));
+        $("#bmp_unit2").val(my_bmp_unit[bmp_id]);
+        $("#label_limit_unit").text(my_bmp_unit[bmp_id]);
+
+    }
+
+    function add_limit_bmp(){
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#bmp_id2").val();
+        var bmp_list = JSON.parse(bmp_id)
+        var bmp_text = $("#bmp_id2 option:selected").html();
+
+        var limit_unit = $("#limit_unit").val();
+        //$('#limit_unit').val((limit_unit).toFixed(2));
+        $('#limit_unit').val(0.00);
+        //var limit_unit = $("#limit_unit").val();
+
+        var limit_cost = $("#limit_cost").val();
+        //$('#limit_cost').val((limit_cost).toFixed(2));
+        $('#limit_cost').val(0.00);
+        //var limit_cost = $("#limit_cost").val();
+        $.ajax({
+			url: "{{=URL('user','add_limit_bmp')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_id,
+                bmp_text:bmp_text,
+                limit_unit:limit_unit,
+                limit_cost:limit_cost
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#limit_bmp_tbody').empty();
+                    for(var i=0; i<resp.limit_bmps.length;i++){
+                        const row = resp.limit_bmps[i];
+
+                        $('#limit_bmp_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[4]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_limit_bmp(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding limit of bmp.");
+				
+			}
+		});
+    }
+
+	$('.amount_unit_cost').change(function(){
+		amount_unit_cost($(this));
+	});
+
+	$('.amount_unit_cost').keyup(function(){
+		amount_unit_cost($(this));
+	});
+
+	function amount_unit_cost(input){
+		const _class = input.data('class');
+		const _type = input.data('type');
+		const x = parseFloat(input.val());
+
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#bmp_id2").val();
+        const my_bmps = JSON.parse("{{=bmp_dict}}".replace(/&quot;/g,'"'));
+        var bmp_cost = my_bmps[bmp_id][1];
+
+		if(_type == 'unit'){ //acres
+			//const max_amount = parseFloat($('#'+_class+'_cost').data('max-amount'));
+
+			$('#'+_class+'_cost').val((x*bmp_cost).toFixed(2));
+
+		}else if(_type == 'amount'){//cost
+			const max_amount = parseFloat(input.data('max-amount'));
+
+			$('#'+_class+'_unit').val((x/bmp_cost).toFixed(2));
+
+		}
+	}
+
+	
+
+	/*************************************************
+	* example of submit modification	
+	**************************************************/
+
+	$("#bmp_alloc_form").submit(function(e) {
+		
+		e.preventDefault(); // avoid to execute the actual submit of the form.
+
+		var form = $(this);
+		var url = form.attr('action');
+
+		var btn = form.find(':submit');
+
+		const btn_prop = {
+			value: btn.val(),
+			css: btn.css("background")
+		}
+
+		$.ajax({
+			type: "POST",
+			url: url,
+			data: form.serialize(), // serializes the form's elements.
+			success: function(data)
+			{
+				form[0].reset(); // clear form
+
+				//btn.css("background", btn_prop.css);
+				//btn.val(btn_prop.value);
+				
+				// Lauch function that retrieves the table info
+				get_bmp_alloc();
+				
+				return false;
+
+			}
+		});
+
+	});
+
+/********************************************************************
+ * 
+ * Land Conversion BMPs 
+ *
+**********************************************************************/	
+    function update_acres(){
+        var load_source_id = $("#land_conversion_load_source_id").val();
+        console.log(load_source_id);
+        const my_load_sources = JSON.parse("{{=load_source_acres_dict}}".replace(/&quot;/g,'"'));
+        console.dir(my_load_sources);
+        $("#land_conversion_acres").val((my_load_sources[load_source_id]).toFixed(2));
+    }
+    function update_land_conversion_cost(){
+
+        var bmp_id = $("#land_conversion_bmp_id").val();
+        console.log(bmp_id);
+        const my_bmps = JSON.parse("{{=bmp_dict}}".replace(/&quot;/g,'"'));
+        console.dir(my_bmps);
+        $("#land_conversion_cost").val(my_bmps[bmp_id][1]);
+    }
+
+    function del_land_conversion(index){
+        $.ajax({
+			url: "{{=URL('user','del_land_conversion', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#land_conversion_tbody').empty();
+                    for(var i=0; i<resp.land_conversion_json.length;i++){
+                        const row = resp.land_conversion_json[i];
+
+                        $('#land_conversion_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[4]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_land_conversion(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+
+    function add_land_conversion(){
+		var ss_id = "{{=ss_id}}";
+        var bmp_id = $("#land_conversion_bmp_id").val();
+        var bmp_list = JSON.parse(bmp_id)
+        var bmp_text = $("#land_conversion_bmp_id option:selected").html();
+
+        var limit_unit = $("#limit_unit").val();
+        //$('#limit_unit').val((limit_unit).toFixed(2));
+        $('#limit_unit').val(0.00);
+        //var limit_unit = $("#limit_unit").val();
+
+        var limit_cost = $("#limit_cost").val();
+        //$('#limit_cost').val((limit_cost).toFixed(2));
+        $('#limit_cost').val(0.00);
+        //var limit_cost = $("#limit_cost").val();
+        $.ajax({
+			url: "{{=URL('user','add_land_conversion')}}",
+			method: "POST",
+			data:{
+                ss_id:ss_id,
+                bmp_id:bmp_list[0],
+                bmp_text:bmp_text,
+                limit_unit:limit_unit,
+                limit_cost:limit_cost
+			},
+            async: true,
+			success: function(resp){
+                console.log(resp);
+
+                if(resp.status == 'OK'){
+                    
+                    $('#land_conversion_tbody').empty();
+                    for(var i=0; i<resp.land_conversions.length;i++){
+                        const row = resp.land_conversions[i];
+
+                        $('#land_conversion_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[4]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_land_conversion(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`)
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error adding limit of bmp.");
+				
+			}
+		});
+    }
+
+/***********************************************************
+ * Geography/BMP Allocation
+ * *****************************************************/
+	
+    var shuall;
+    const bmps = "{{=bmps_json}}";
+    const bmps_json = JSON.parse(bmps.replace(/&quot;/g,'"'));
+
+    //const shuall_txt = "";
+    //shuall = JSON.parse(bmps.replace(/&quot;/g,'"'));
+    //shuall = JSON.parse(bmps);
+
+    // function init(){
+    //     hidePanels();
+    //     $('#select_lrseg').empty();
+
+    //     for (var key of Object.keys(shuall)) {
+
+    //         f_agency = Object.keys(shuall[key])[0];
+    //         f_ls = Object.keys(shuall[key][f_agency])[0];
+
+            
+    //         $('#select_lrseg').append(new Option(shuall[key][f_agency][f_ls][1], key));
+
+    //     }
+
+    //     filterAgency();
+    // }
+
+    async function get_shuall(){
+        hidePanels();
+
+        $.ajax({
+			url: "{{=URL('user','get_s_h_u_all', args=[request.args(0)])}}",
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+                shuall = resp;
+                
+                $('#select_lrseg').empty();
+                $('#developed_select_lrseg').empty();
+                $('#septic_select_lrseg').empty();
+                $('#natural_select_lrseg').empty();
+
+                for (var key of Object.keys(shuall)) {
+
+                    f_agency = Object.keys(shuall[key])[0];
+                    f_ls = Object.keys(shuall[key][f_agency])[0];
+
+                    
+                    $('#select_lrseg').append(new Option(shuall[key][f_agency][f_ls][1], key));
+                    $('#developed_select_lrseg').append(new Option(shuall[key][f_agency][f_ls][1], key));
+                    $('#septic_select_lrseg').append(new Option(shuall[key][f_agency][f_ls][1], key));
+                    $('#natural_select_lrseg').append(new Option(shuall[key][f_agency][f_ls][1], key));
+
+                }
+
+                filterAgency();                
+
+			},
+			error: function() {
+				console.log("Error retriving s_h_u_all data.");
+				
+			}
+		});
+    }
+
+
+
+    function filterAgency(){
+        const lrseg = $('#select_lrseg').val();
+
+        $('#select_agency').empty();
+
+        for (var key of Object.keys(shuall[lrseg])) {
+            
+            f_agency = Object.keys(shuall[lrseg][key])[0];
+
+            $('#select_agency').append(new Option(shuall[lrseg][key][f_agency][3], key));
+
+        }
+
+        $('#agency_panel').show();
+
+        filterLoadSource();
+    }
+
+    function developed_filterAgency(){
+        const lrseg = $('#developed_select_lrseg').val();
+
+        $('#developed_select_agency').empty();
+
+        for (var key of Object.keys(shuall[lrseg])) {
+            
+            f_agency = Object.keys(shuall[lrseg][key])[0];
+
+            $('#developed_select_agency').append(new Option(shuall[lrseg][key][f_agency][3], key));
+
+        }
+
+        $('#developed_agency_panel').show();
+
+        developed_filterLoadSource();
+    }
+
+    function septic_filterAgency(){
+        const lrseg = $('#septic_select_lrseg').val();
+
+        $('#septic_select_agency').empty();
+
+        for (var key of Object.keys(shuall[lrseg])) {
+            
+            f_agency = Object.keys(shuall[lrseg][key])[0];
+
+            $('#septic_select_agency').append(new Option(shuall[lrseg][key][f_agency][3], key));
+
+        }
+
+        $('#septic_agency_panel').show();
+
+        septic_filterLoadSource();
+    }
+
+
+    function natural_filterAgency(){
+        const lrseg = $('#natural_select_lrseg').val();
+
+        $('#natural_select_agency').empty();
+
+        for (var key of Object.keys(shuall[lrseg])) {
+            
+            f_agency = Object.keys(shuall[lrseg][key])[0];
+
+            $('#natural_select_agency').append(new Option(shuall[lrseg][key][f_agency][3], key));
+
+        }
+
+        $('#natural_agency_panel').show();
+
+        natural_filterLoadSource();
+    }
+
+
+    function filterLoadSource(){
+        const lrseg = $('#select_lrseg').val();
+        const agency = $('#select_agency').val();
+
+        $('#select_ls').empty();
+
+        for (var key of Object.keys(shuall[lrseg][agency])) {
+
+            $('#select_ls').append(new Option(shuall[lrseg][agency][key][5], key));
+
+            
+
+        }
+
+        $('#ls_panel').show();
+
+        filterBmpGroups();
+    }
+
+    function developed_filterLoadSource(){
+        const lrseg = $('#developed_select_lrseg').val();
+        const agency = $('#developed_select_agency').val();
+
+        $('#developed_select_ls').empty();
+
+        for (var key of Object.keys(shuall[lrseg][agency])) {
+
+            $('#developed_select_ls').append(new Option(shuall[lrseg][agency][key][5], key));
+
+        }
+
+        $('#developed_ls_panel').show();
+    }
+
+    function septic_filterLoadSource(){
+        const lrseg = $('#septic_select_lrseg').val();
+        const agency = $('#septic_select_agency').val();
+
+        $('#septic_select_ls').empty();
+
+        for (var key of Object.keys(shuall[lrseg][agency])) {
+
+            $('#septic_select_ls').append(new Option(shuall[lrseg][agency][key][5], key));
+
+        }
+
+        $('#septic_ls_panel').show();
+    }
+
+    function natural_filterLoadSource(){
+        const lrseg = $('#natural_select_lrseg').val();
+        const agency = $('#natural_select_agency').val();
+
+        $('#natural_select_ls').empty();
+
+        for (var key of Object.keys(shuall[lrseg][agency])) {
+
+            $('#natural_select_ls').append(new Option(shuall[lrseg][agency][key][5], key));
+
+        }
+
+        $('#natural_ls_panel').show();
+    }
+
+    function filterBmpGroups(){
+        const lrseg = $('#select_lrseg').val();
+        const agency = $('#select_agency').val();
+        const ls = $('#select_ls').val();
+
+        const bmp_groups = shuall[lrseg][agency][ls][8];
+
+        $('#select_bmp_groups').empty();
+
+        for(var i=0; i<bmp_groups.length; i++){
+
+            $('#select_bmp_groups').append(new Option('Group '+(i+1), i));
+        }
+
+        $('#bmp_groups_panel').show();
+
+        showAmountInput();
+    }
+
+    function showAmountInput(){
+        const lrseg = $('#select_lrseg').val();
+        const agency = $('#select_agency').val();
+        const ls = $('#select_ls').val();
+        
+        const index_group = $('#select_bmp_groups').val();
+
+        console.dir(shuall[lrseg][agency][ls][8]);
+
+        const bmp_group = shuall[lrseg][agency][ls][8][index_group];
+        const max_amount = shuall[lrseg][agency][ls][6];
+
+        $('#max_amount').text((max_amount).toFixed(2));
+
+        console.log("BMP group");
+        console.dir(bmp_group);
+
+        const container = $('#amount_input');
+        container.empty();
+        for(var i=0;i<bmp_group.length;i++){
+            container.append(`
+                <div class="row">
+                    <div class="col-sm-6">`+(i+1)+`. `+bmps_json[bmp_group[i]]+`</div>
+                    <div class="col-sm-3">
+                        <input type="number" id="bmp_min_amount_`+i+`" placeholder="Min amount" class="form-control bmp-input" data-bmp-id="`+bmp_group[i]+`">
+                    </div>
+                    <div class="col-sm-3">
+                        <input type="number" id="bmp_max_amount_`+i+`" placeholder="Max amount" class="form-control bmp-input" data-bmp-id="`+bmp_group[i]+`">
+                    </div>
+                    
+                </div>
+            `);
+
+        }
+        
+    }
+
+    function del_bounded_bmp_detailed(index){
+        $.ajax({
+			url: "{{=URL('user','del_bounded_bmp_detailed', args=[request.args(0)])}}/"+index,
+			method: "POST",
+			data:{
+			},
+            async: true,
+			success: function(resp){
+
+                if(resp.status == 'OK'){
+                    
+                    $('#bounded_bmp_detailed_tbody').empty();
+                    for(var i=0; i<resp.bounded_bmps_detailed.length;i++){
+                        const row = resp.bounded_bmps_detailed[i];
+
+                        $('#bounded_bmp_detailed_tbody').append(`<tr>
+                        <td>`+(i+1)+`</td>
+                        <td>`+row[1]+`</td>
+                        <td>`+row[3]+`</td>
+                        <td>`+row[5]+`</td>
+                        <td>`+row[7]+`</td>
+                        <td align='right'>`+row[8]+`</td>
+                        <td align='right'>`+row[9]+`</td>
+                        <td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_bounded_bmp_detailed(`+i+`);"><i class="fas fa-trash"></i></a></td>
+                    </tr>`);
+                        
+                    }
+                }
+			},
+			error: function() {
+				console.log("Error deleting fixed bmp.");
+				
+			}
+		});
+    }
+
+
+	
+	$(document).ready(function(){
+        
+        get_shuall();
+        //init();
+
+
+		function get_bounded_bmp_detailed(){
+			$.ajax({
+				url: "{{=URL('user','get_bounded_bmp_detailed', args=[request.args(0)])}}",
+				method: "POST",
+				data:{
+				},
+				async: true,
+				success: function(resp){
+
+					$('#bounded_bmp_detailed_tbody').empty();
+					for(var i=0; i<resp.length;i++){
+						const row = resp[i];
+
+						$('#bounded_bmp_detailed_tbody').append(`<tr>
+							<td>`+(i+1)+`</td>
+							<td>`+row[1]+`</td>
+							<td>`+row[3]+`</td>
+							<td>`+row[5]+`</td>
+							<td>`+row[7]+`</td>
+							<td align='right'>`+row[8]+`</td>
+							<td align='right'>`+row[9]+`</td>
+							<td align='right'><a href="#" class="btn btn-danger btn-sm" onclick="del_bounded_bmp_detailed(`+i+`);"><i class="fas fa-trash"></i></a></td>
+						</tr>`);
+						
+					}
+					
+				},
+				error: function() {
+					console.log("Error getting bounded bmp detailed.");
+					
+				}
+			});
+		}
+
+
+        $("#form_bounded_bmp_detailed").submit(function( e ) {
+			//e.preventDefault(); // avoid to execute the actual submit of the form.
+
+            const lrseg = $('#select_lrseg').val();
+            const agency = $('#select_agency').val();
+            const ls = $('#select_ls').val();
+
+            const index_group = $('#select_bmp_groups').val();
+
+            const bmp_group = shuall[lrseg][agency][ls][8][index_group];
+            const max_amount = shuall[lrseg][agency][ls][6];
+            
+            var rows = [];
+
+            var sum_amount = 0;
+
+            var messages=[];
+            var success = true;
+
+            if (lrseg != -1 && agency != -1 && ls !=-1){
+                const custom = shuall[lrseg][agency][ls];
+
+                console.log('Custom');
+                console.dir(custom);
+
+                // Loop through selected bmp gruoup
+                for(var i=0;i<bmp_group.length;i++){
+                    var amount = Number($('#bmp_max_amount_'+i).val());
+                    var min_amount = Number($('#bmp_min_amount_'+i).val());
+                    
+                    if(isNaN(amount)){
+                        amount = max_amount;
+                    }
+
+                    if(amount > max_amount){
+                        //amount = max_amount;
+
+                        messages.push("("+(i+1)+". "+bmps_json[bmp_group[i]]+"): Max amount could not be greater than BMP group max amount.\n\n");
+
+                        success = false;
+                    }
+
+                    if(isNaN(min_amount)){
+                        min_amount = 0;
+                    }
+
+                    if(min_amount > amount){
+                        messages.push("("+(i+1)+". "+bmps_json[bmp_group[i]]+"): Min amount could not be greater than max amount.\n\n");
+                        success = false;
+                    }
+
+                    if(min_amount > max_amount){
+                        messages.push("("+(i+1)+". "+bmps_json[bmp_group[i]]+"): Min amount could not be greater than  BMP group max amount.\n\n");
+                        success = false;
+                    }
+
+                    
+
+                    /*if(amount > max_amount){
+                        amount = max_amount;
+                    }*/
+
+                    sum_amount += amount-min_amount;
+
+                    if(success){
+                        // LrsegId, LrsegName, AgencyId, AgencyName, LsId, LoadSourceName, BmpId, BmpFullName, Amount, Cost
+                        const row = [custom[0],custom[1],custom[2],custom[3],custom[4],custom[5],bmp_group[i],bmps_json[bmp_group[i]], min_amount, amount, 0];
+                        rows.push(row);
+                    }
+                    
+
+                }
+
+                //if(sum_amount > max_amount){
+                if(success){
+
+					e.preventDefault(); // avoid to execute the actual submit of the form.
+					
+					$('#custom_rows').val(JSON.stringify(rows));
+
+					var form = $(this);
+					var url = form.attr('action');
+
+					var btn = form.find(':submit');
+
+					const btn_prop = {
+						value: btn.val(),
+						css: btn.css("background")
+					}
+
+					$.ajax({
+						type: "POST",
+						url: url,
+						data: form.serialize(), // serializes the form's elements.
+						success: function(data)
+						{
+							form[0].reset(); // clear form
+
+							//btn.css("background", btn_prop.css);
+							//btn.val(btn_prop.value);
+							
+							// Lauch function that retrieves the table info
+							get_bounded_bmp_detailed()
+							
+							return false;
+
+						}
+					});
+                    
+                }else{
+                    e.preventDefault();
+                    alert("WARNING: \n\n"+messages.toString());
+                    return;
+                }
+
+                
+
+            }else{
+                e.preventDefault();
+                alert('Please fill the form.');
+                return;
+            }
+            
+            //event.preventDefault();
+        });
+
+
+    });
+
+	/*******************************************
+	 * AMOUNT TO PERCENTAGE AND VICEVERSA
+	*/
+
+	$('.amount_percentage_val').change(function(){
+		amount_percentage_val($(this));
+	});
+
+	$('.amount_percentage_val').keyup(function(){
+		amount_percentage_val($(this));
+	});
+
+	$('.amount_percentage_val_inv').change(function(){
+		amount_percentage_val_inv($(this));
+	});
+
+	$('.amount_percentage_val_inv').keyup(function(){
+		amount_percentage_val_inv($(this));
+	});
+
+	function amount_percentage_val(input){
+		const _class = input.data('class');
+		const _type = input.data('type');
+		const x = parseFloat(input.val());
+
+		if(_type == 'percentage'){
+			const max_amount = parseFloat($('#'+_class+'_proposed_amount').data('max-amount'));
+
+			$('#'+_class+'_proposed_amount').val((max_amount * (x/100.0) ).toFixed(2));
+
+		}else if(_type == 'amount'){
+			const max_amount = parseFloat(input.data('max-amount'));
+
+			$('#'+_class+'_percentage').val((x/max_amount * 100).toFixed(2));
+
+		}
+	}
+
+	function amount_percentage_val_inv(input){
+		const _class = input.data('class');
+		const _type = input.data('type');
+		const x = parseFloat(input.val());
+
+		if(_type == 'percentage'){
+			const max_amount = parseFloat($('#'+_class+'_proposed_amount').data('max-amount'));
+
+			$('#'+_class+'_proposed_amount').val((max_amount * ((100.0-x)/100.0) ).toFixed(2));
+
+		}else if(_type == 'amount'){
+			const max_amount = parseFloat(input.data('max-amount'));
+			$('#'+_class+'_percentage').val((100.0-(x*100.0/max_amount)).toFixed(2));
+
+		}
+	}
+jQuery(document).ready(function($) {
+	$('#optgroup').multiselect({
+		search: {
+            left: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+            right: '<input type="text" name="q" class="form-control" placeholder="Search..." />',
+        },
+        fireSearch: function(value) {
+            return value.length > 3;
+        },
+        /*
+		afterMoveToRight: function($left, $right, $options){
+			//console.dir($right["0"].options)
+			
+            //Object.keys(obj).forEach(function(key) {
+   //           console.log(key, obj[key])
+            //})
+			console.log($right["0"].options.length)
+			arr_saved_bmps = [];
+			for (var i=0; i < $right["0"].options.length; i++){
+				var tmp_val = $right["0"].options[i];
+				arr_saved_bmps.push(parseInt(tmp_val.value));
+				//console.dir($right["0"].options[i]);
+			}
+            */
+		/*	
+			var selected = $right.find("value");
+			var arrSelected = [];
+			selected.each(function(){
+				arrSelected.push($this.val());
+			});
+			console.log(arrSelected);*/
+			//console.log($right);
+		//}
+	});
+
+	hidePanels();
+});
+</script>

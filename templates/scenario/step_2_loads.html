@@ -1,0 +1,140 @@
+
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% block content %}
+<div id="content_step">
+
+    <table class="table w-full" id="bmp_summary_table">
+      <thead>
+        <tr>
+          <th>Load</th>
+          <th>Initial Load</th>
+          <th>Removal Percentage</th>
+          <th>Expected load</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-left">Nitrogen</td>
+          <td class="text-right">{{ total1 }}</td>
+          <td>
+        
+            <input name="nitrogen_percentage" type="number"  data-type="removal-percentage" data-row="row1" data-total="{{ total1 }}" value="0">
+            <span>%</span>
+          </td>
+          <td>
+              <input name="nitrogen_load" type="number" data-type="expected-load" data-row="row1" data-total="{{ total1 }}" value="{{ total1 }}">
+            <span>lb</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="text-left">Phosphorous</td>
+          <td class="text-right">{{ total2 }}</td>
+          <td>
+        
+            <input type="number" name="phosphorous_percentage" data-type="removal-percentage" data-row="row2" data-total="{{ total2 }}" value="0">
+            <span>%</span>
+          </td>
+          <td>
+              <input type="number" name="phosphorous_load" data-type="expected-load" data-row="row2" data-total="{{ total2 }}" value="{{ total2 }}">
+            <span>lb</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="text-left">Sediments</td>
+          <td class="text-right">{{ total3 }}</td>
+          <td>
+        
+            <input type="number" name="sediments_percentage" data-type="removal-percentage" data-row="row3" data-total="{{ total3 }}" value="0">
+            <span>%</span>
+          </td>
+          <td>
+              <input type="number" name="sediments_load" data-type="expected-load" data-row="row3" data-total="{{ total3 }}" value="{{ total3 }}">
+            <span>lb</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="flex items-center mb-3">
+      <label class="flex-1">Total dollars for BMP implementation:</label>
+      <div class="flex-2">
+        <input id="total_dollars" type="number" class="input input-bordered" />
+      </div>
+    </div>
+
+
+<table class="table w-full">
+  <tr>
+    <td>Total Acres Allocated to BMPs: {{ total_acres }}</td>
+    <td>
+      <input type="number" data-type="percentage" data-row="row4" data-total="{{ total_acres }}" value="100">
+      <span>%</span>
+    </td>
+    <td>
+      <input type="number" data-type="acres" data-row="row4" data-total="{{ total_acres }}" value="{{ total_acres }}">
+      <span>acres</span>
+    </td>
+  </tr>
+</table>
+
+    <div class="flex justify-between">
+        {% if current_step > 1 %}
+            <button hx-get="{% url 'step1' %}" hx-target="#content_step" hx-swap="outerHtml"  onclick="storeInputValues(); updateStepIndicator({{ previous_step }})" class="btn">Previous</button>
+        {% endif %}
+        {% if current_step < 6 %}
+            <button hx-get="{% url 'step3' %}" hx-target="#content_step" hx-swap="outerHTML" onclick="storeInputValues(); updateStepIndicator({{ next_step }})" class="btn">Next</button>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+
+document.querySelectorAll('[data-type="percentage"]').forEach(numberInput => {
+    let rowId = numberInput.getAttribute('data-row');
+    let total = parseFloat(numberInput.getAttribute('data-total'));
+    let percentageInput = document.querySelector(`[data-row='${rowId}'][data-type='acres']`);
+
+    numberInput.addEventListener('input', function() {
+        let value = Math.max(0, Math.min(this.value, 100));
+        this.value = value;
+        let tmp = (value * total) / 100;
+        percentageInput.value = parseFloat(tmp).toFixed(2); 
+    });
+
+    percentageInput.addEventListener('input', function() {
+        let value = Math.max(0, Math.min(this.value, total));
+        this.value = value;
+        let tmp = (value / total) * 100;
+        numberInput.value = parseFloat(tmp).toFixed(2); 
+    });
+});
+
+document.querySelectorAll('[data-type="removal-percentage"]').forEach(numberInput => {
+    let rowId = numberInput.getAttribute('data-row');
+    let total = parseFloat(numberInput.getAttribute('data-total'));
+    let percentageInput = document.querySelector(`[data-row='${rowId}'][data-type='expected-load']`);
+
+    numberInput.addEventListener('input', function() {
+        let value = Math.max(0, Math.min(this.value, 100));
+        this.value = value;
+        let tmp = total-((value * total) / 100);
+        percentageInput.value = parseFloat(tmp).toFixed(2); 
+    });
+
+    percentageInput.addEventListener('input', function() {
+        let value = Math.max(0, Math.min(this.value, total));
+        this.value = value;
+        let tmp = 100-((value) / total) * 100;
+        numberInput.value = parseFloat(tmp).toFixed(2); 
+    });
+});
+
+// Call this function when the step is loaded
+document.addEventListener('DOMContentLoaded', restoreInputValues);
+</script>
+
+
+{% endblock %}
+

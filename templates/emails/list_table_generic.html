@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load render_table from django_tables2 %}
+{% block content %}
+    <div class="container">
+        <div class="px-5 my-5 text-center">
+            <h1>{{ title_page }}</h1>
+            <p></p>
+        </div>
+
+
+        <form method="get">
+            {{ filter.form.as_p }}
+            <button type="submit">Buscar</button>
+        </form>
+        {% render_table table %}
+        <a href="{{ create_url }}" class="btn btn-primary">
+            {{ create_title }}
+        </a>
+        <div class="px-5 my-5 text-right">
+            <a href="{{request.META.HTTP_REFERER|escape}}">Back</a>
+        </div>
+
+    </div>
+
+    <!-- Placeholder for the modal -->
+    <div id="modal" class="modal fade">
+        <div id="dialog" class="modal-dialog" hx-target="this"></div>
+    </div>
+
+    <!-- Empty toast to show the message -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div id="toast-body" class="toast-body"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

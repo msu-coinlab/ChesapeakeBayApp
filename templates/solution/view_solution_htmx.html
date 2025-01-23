@@ -1,0 +1,1195 @@
+{% extends 'core/base.html' %}
+
+{% load crispy_forms_tags %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+
+
+{% block head %}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+    .modal-background {
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+    
+    }
+    .drawer-side {
+        z-index: 9900; /* Example value; adjust as needed based on your layout */
+    }
+    .dt-body-right {
+        text-align: right;
+    }
+    .info {
+        padding: 6px 8px;
+        font: 14px/16px Arial, Helvetica, sans-serif;
+        background: white;
+        background: rgba(255,255,255,0.8);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 5px;
+    }
+    .info h4 {
+        margin: 0 0 5px;
+        color: #777;
+    }
+
+    .legend {
+        line-height: 18px;
+        color: #555;
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.7;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+{{ scen_lrs_geojson_data|json_script:"scen-lrs-geojson-data" }}
+{{ solution_id|json_script:"solution-id" }}
+{{ scen_county_geojson_data|json_script:"scen-county-geojson-data" }}
+{{ states_geojson_data|json_script:"states-geojson-data" }}
+{{ chesapeake_geojson_data|json_script:"chesapeake-geojson-data" }}
+{{ county_geojson_data|json_script:"county-geojson-data" }}
+
+<div
+    class="mx-auto p-4"
+>
+
+
+
+    <div class="px-5 my-5 text-center">
+        <h1 class="text-4xl font-bold text-primary">{{ page_title }}</h1>
+        <p></p>
+
+        <div class="drawer drawer-end" style="z-index: 9900;">
+            <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
+            <div class="drawer-content fixed right-0">
+                <!-- Page content here -->
+                <label
+                    for="my-drawer-4"
+                    class="drawer-button btn hover:bg-green-800"
+                >
+                    <span class="material-icons">settings</span>
+                </label>
+            </div>
+
+            <div class="drawer-side">
+                <label
+                    for="my-drawer-4"
+                    aria-label="close sidebar"
+                    class="drawer-overlay"
+                ></label>
+                <div
+                    id="drawer-content"
+                    namae="drawer-content"
+                    class="p-4 w-80 min-h-full bg-base-200 text-base-content"
+                >
+                    {% include 'solution/partials/_view_drawer_content.html' %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div x-data="chatBot()"> 
+        <button @click="openModal = true" class="modal-open-button p-4 rounded-full shadow-lg fixed bottom-5 right-5 z-9900 flex items-center justify-center" style="z-index: 9900;">
+            <span class="material-icons">chat</span>
+        </button>
+
+        <div
+            x-show="openModal"
+            @click.away="openModal = false"
+            @keydown.escape.window="openModal = false"
+            style="display: none; z-index: 9900;"
+            class="modal-background"
+        >
+            <div @click.away="openModal=false" class="modal-content" @click.stop="">
+                <button
+                    @click="openModal = false"
+                    class="absolute top-0 right-1 mt-0 mr-0 text-2xl font-semibold hover:bg-gray-200 rounded-full cursor-pointer"
+                >
+                    &times;
+                    <!-- Represents 'X' -->
+                </button>
+                <h2>BayBot, BMP Buddy, GreenGuardian, AquaAdvisor, Watershed Whisperer, EcoEcho</h2>
+            <!-- Chat Messages -->
+            <div id="chat-output" class="p-4 max-h-60 overflow-y-auto">
+                <template x-for="(message, index) in messages" :key="index">
+                    <div :class="{'chat-start': message.type === 'user', 'chat-end': message.type === 'bot'}">
+                        <div class="chat-bubble" x-html="message.text"></div>
+                    </div>
+                </template>
+            </div>
+
+
+            <!-- Input Form -->
+
+<form @submit.prevent="sendUserInput">
+    <input type="text" x-model="userInput" class="input input-bordered w-full max-w-xs" placeholder="Type a message..." autocomplete="off">
+    <button type="submit" class="btn">Send</button>
+</form>
+                <!--- <p>This is a simple modal.</p> --->
+                <!-- Button to close modal -->
+            </div>
+        </div>
+    </div>
+
+    <div x-data="mapApp()">
+        <div id="mapid" style="height: 1000px;"></div>
+    </div>
+    <div id="table-container2" name="table-container2">
+    </div>
+
+
+    <div x-data="{ currentTab: 'tab0' }" x-init="
+        window.addEventListener('changeTab', (event) => {
+            currentTab = event.detail.tabName;
+        });
+    ">
+        <div role="tablist" class="tabs tabs-boxed">
+            <a
+                role="tab"
+                class="tab"
+                :class="{ 'tab-active': currentTab === 'tab0' }"
+                @click.prevent="currentTab = 'tab0'"
+                >Summary BMPs</a
+            >
+            <a
+                role="tab"
+                class="tab"
+                :class="{ 'tab-active': currentTab === 'tab1' }"
+                @click.prevent="currentTab = 'tab1'"
+                >Efficiency and Land Conversion BMPs</a
+            >
+            <a
+                role="tab"
+                class="tab"
+                :class="{ 'tab-active': currentTab === 'tab2' }"
+                @click.prevent="currentTab = 'tab2'"
+                >Animal BMPs</a
+            >
+            <a
+                role="tab"
+                class="tab"
+                :class="{ 'tab-active': currentTab === 'tab3' }"
+                @click.prevent="currentTab = 'tab3'"
+                >Manure Transport BMPs</a
+            >
+            <a
+                role="tab"
+                class="tab"
+                :class="{ 'tab-active': currentTab === 'tab4' }"
+                @click.prevent="currentTab = 'tab4'"
+                >Loads</a
+            >
+        </div>
+
+        <!-- Table Containers -->
+    
+        <div class="mx-auto p-4" 
+            x-show="currentTab === 'tab0'">
+            {% render_table table0 %}
+            <div x-data="chartComponent()" x-init="init()">
+                <div class="mx-auto p-4" id="chart"></div>
+            </div>
+            <div x-data="pieChartComponent()" x-init="init()">
+                <div class="mx-auto p-4" id="pieChart"></div>
+            </div>
+        </div>
+        <div x-show="currentTab === 'tab1'">
+            {% render_table table %}
+        </div>
+        <div x-show="currentTab === 'tab2'" style="display: none">
+            {% render_table table2 %}
+        </div>
+        <div x-show="currentTab === 'tab3'" style="display: none">
+            {% render_table table3 %}
+        </div>
+        <div x-show="currentTab === 'tab4'" style="display: none">
+            {% render_table table4 %}
+        </div>
+    </div>
+
+    {% if create_url %}
+    <a href="{{ create_url }}" class="btn btn-primary"> {{ create_title }} </a>
+    {% endif %}
+
+    <div class="px-5 my-5 text-right">
+        <a
+            href="{{ request.META.HTTP_REFERER|escape }}"
+            class="btn btn-secondary btn-sm"
+        >
+            <i class="material-icons">arrow_back</i>
+        </a>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    function getColumnDefsForTable(tableSelector) {
+        if (tableSelector === '.my-table-efficiency') {
+            // Configuration for 'my-table'
+            return [
+                {
+                    targets: [6],
+                    className: "dt-body-right",
+                    render: function (data, type, row, meta) {
+                        if (type === "display") {
+                            return parseInt(data).toLocaleString("en-US");
+                        }
+                        return data;
+                    },
+                },
+                // You can add more columnDefs specific to '#my-table' here
+            ];
+        } else if (tableSelector === '#my-table-animal') {
+            // Configuration for 'my-table2'
+            return [
+                {
+                    targets: [4],
+                    render: function (data, type, row, meta) {
+                        if (type === "display") {
+                            return parseInt(data).toLocaleString("en-US");
+                        }
+                        return data;
+                    },
+                },
+                // Add more columnDefs specific to '#my-table2' if needed
+            ];
+        } else if (tableSelector === '.my-table-loads') {
+            return [
+                {
+                    targets: [4,5,6],
+                    render: function (data, type, row, meta) {
+                        if (type === "display") {
+                            return parseInt(data).toLocaleString("en-US");
+                        }
+                        return data;
+                    },
+                },
+                // Add more columnDefs specific to '#my-table2' if needed
+            ];
+        }
+        // Default configuration if needed
+        return [
+            // Default columnDefs configuration
+        ];
+    }
+    function initializeDataTables(tableSelector) {
+        // Destroy existing DataTables instance if exists to avoid reinitialization errors
+        if ($.fn.DataTable.isDataTable(tableSelector)) {
+            $(tableSelector).DataTable().destroy();
+        }
+
+        // Initialize DataTables
+        $(tableSelector).DataTable({
+            pagingType: "simple_numbers",
+            searching: true,
+            ordering: true,
+            autoWidth: true,
+            pageLength: 25,
+            columnDefs: getColumnDefsForTable(tableSelector), 
+        });
+    }
+
+    // Call the function on document ready to initialize DataTables
+    $(document).ready(function () {
+        initializeDataTables('.my-table-efficiency');
+        initializeDataTables('.my-table-animal');
+        initializeDataTables('.my-table-loads');
+    });
+    document.body.addEventListener("htmx:afterSwap", function (event) {
+        if (event.detail.target.id === "table-container2") {
+            initializeDataTables('.my-table-efficiency');
+            initializeDataTables('.my-table-animal');
+            initializeDataTables('.my-table-loads');
+        }
+    });
+        
+ function mapApp() {
+
+        return {
+     openModal : false,
+     scenLrsGeojsonData : {},
+     scenCountyGeojsonData : {},
+     statesGeojsonData : {},
+     countyGeojsonData : {},
+     solutionId : null,
+            init() {
+                this.openModal = false;
+
+                this.solutionId = JSON.parse(document.getElementById('solution-id').textContent);
+                console.log(this.solutionId);
+                this.scenLrsGeojsonData = JSON.parse(document.getElementById('scen-lrs-geojson-data').textContent);
+                this.scenCountyGeojsonData = JSON.parse(document.getElementById('scen-county-geojson-data').textContent);
+                this.statesGeojsonData = JSON.parse(document.getElementById('states-geojson-data').textContent); // Ensure this ID matches your HTML element containing the states GeoJSON data
+                this.chesapeakeGeojsonData = JSON.parse(document.getElementById('chesapeake-geojson-data').textContent); // Ensure this ID matches your HTML element containing the chesapeake GeoJSON data
+                this.countyGeojsonData = JSON.parse(document.getElementById('county-geojson-data').textContent); // Ensure this ID matches your HTML element containing the chesapeake GeoJSON data
+
+                this.initMap();
+            },
+
+            initMap() {
+                var mymap = L.map('mapid').setView([38.807, -76.85], 7); // Centered on Maryland
+
+                var baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 18,
+                }).addTo(mymap);
+                //L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                //    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.esri.com/">Esri</a>',
+                //    maxZoom: 18,
+                //}).addTo(mymap);
+
+
+                // control that shows state info on hover
+	            const info = L.control();
+
+	            info.onAdd = function (map) {
+	            	this._div = L.DomUtil.create('div', 'info');
+	            	this.update();
+	            	return this._div;
+	            };
+
+
+	            info.update = function (props) {
+                    // If props.LndRvrSeg exists, include it before props.County; otherwise, leave it out
+                    const lndRvrSegPart = props && props.LndRvrSeg ? `${props.LndRvrSeg}<br/>` : '';
+                    //const contents = props ? `<b>${lndRvrSegPart}${props.County}, ${props.State} </b><br/> Acres: ${props.Acres}<br/>Cost: \$ ${props.Cost}<br/>` : 'Hover over a county';
+
+
+                    const contents = props ? `
+                        <b>${lndRvrSegPart}${props.County}, ${props.State}</b><br/>
+                        Acres: ${props.Acres}<br/>
+                        Cost: \$${new Intl.NumberFormat('en-US', {style: 'decimal', minimumFractionDigits: 0}).format(props.Cost)}<br/>
+                        <table style="width:100%; margin-top:10px;">
+                            <tr>
+                                <th>Load Type</th>
+                                <th>lbs/yr</th>
+                                <th>% Reduction</th>
+                            </tr>
+                            <tr>
+                                <td>Nitrogen</td>
+                                <td>${props.Ns}</td>
+                        <td>${new Intl.NumberFormat('en-US', {style: 'decimal', minimumFractionDigits: 0}).format(props.PN)}%</td>
+                            </tr>
+                            <tr>
+                                <td>Phosphorus</td>
+                                <td>${new Intl.NumberFormat('en-US', {style: 'decimal', minimumFractionDigits: 0}).format(props.Ps)}</td>
+                                <td>${new Intl.NumberFormat('en-US', {style: 'decimal', minimumFractionDigits: 0}).format(props.PP)}%</td>
+                            </tr>
+                            <tr>
+                                <td>Sediments</td>
+                                <td>${props.Ss}</td>
+                                <td>${props.PS}%</td>
+                            </tr>
+                        </table>
+                    ` : 'Hover over a county';
+                    this._div.innerHTML = `<h4>Chesapeake Bay</h4>${contents}`;
+	            };
+
+	            info.addTo(mymap);
+
+
+                // get color depending on population density value
+
+	            function getColor2(d) {
+	            	return d === "24" ? '#800026' : //MD
+	            		d === "36" ? '#BD0026' : //NY
+	            		d === "10" ? '#E31A1C' : //DE
+	            		d === "11" ? '#FC4E2A' : //11
+	            		d === "42" ? '#FD8D3C' : //PA
+	            		d === "51" ? '#FEB24C' : //VA
+	            		d === "54" ? '#FED976' : '#FFEDA0'; //WV
+	            };
+	            function getColor(d) {
+	            	return d === "MD" ? '#800026' : //MD
+	            		d === "NY" ? '#BD0026' : //NY
+	            		d === "DE" ? '#E31A1C' : //DE
+	            		d === "DC" ? '#FC4E2A' : //11
+	            		d === "PA" ? '#FD8D3C' : //PA
+	            		d === "VA" ? '#FEB24C' : //VA
+	            		d === "WV" ? '#FED976' : '#FFEDA0'; //WV
+	            };
+	            function getState(d) {
+	            	return d === "24" ? "MD" : //MD
+	            		d === "36" ? "NY" : //NY
+	            		d === "10" ? "DE" : //DE
+	            		d === "11" ? "D.C." : //11
+	            		d === "42" ? "PA" : //PA
+	            		d === "51" ? "VA" : //VA
+	            		d === "54" ? "WV" : "Other"; //WV
+	            };
+
+                function updateMapStyles(maxOpacity) {
+                    mymap.eachLayer(function(layer) {
+                        if (layer.feature) { // Check if layer is a GeoJSON layer
+                            layer.setStyle({
+                                fillOpacity: maxOpacity // Or adjust the styling based on your needs
+                            });
+                        }
+                    });
+                };
+
+function adjustColorForCostOrReduction(value, type) {
+    let hue, saturation = 100, lightness;
+
+    if (type === 'cost') {
+        // Magenta for cost
+        hue = 240; // HSL hue for 300 magenta
+        const maxCost = 2000000; // Example max cost for scaling
+        lightness = 50 + (50 - (Math.min(value, maxCost) / maxCost) * 50); // Lighter for higher costs
+    } else if (type === 'reduction') {
+        // Orange for reduction
+        hue = 30; // HSL hue for orange
+        lightness = 50 + (50 - (value / 60) * 50); // Lighter for higher reduction percentages
+    }
+
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+};
+
+function styleByCost(feature) {
+    return {
+        weight: 2,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7,
+        fillColor: adjustColorForCostOrReduction(feature.properties.Cost, 'cost')
+    };
+};
+
+function styleByReduction(feature) {
+    return {
+        weight: 2,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7,
+        fillColor: adjustColorForCostOrReduction(feature.properties.PN, 'reduction')
+    };
+};
+                function adjustColorIntensity(baseHslColor, cost) {
+                    // Parse the base HSL color to extract its components
+                    let [hue, saturation, lightness] = baseHslColor.match(/\d+/g).map(Number);
+                
+                    // Define the maximum cost considered for scaling
+                    const maxCost = 50000;
+                    // Calculate the scaling factor for lightness adjustment, ensuring cost does not exceed maxCost
+                    const scale = Math.min(cost, maxCost) / maxCost;
+                    
+                    // Define the range of lightness - assuming 100% is too bright, we'll start from a lower value
+                    // Adjust these values as needed
+                    const maxLightness = 100; // Maximum lightness for $0 cost
+                    const minLightness = 10; // Minimum lightness for $50,000 cost or above
+                    
+                    // Calculate the new lightness based on the cost, scaling between minLightness and maxLightness
+                    lightness = maxLightness - ((maxLightness - minLightness) * scale);
+                
+                    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                };
+
+                function adjustColorAndOpacity(baseHslColor, cost, maxCost) {
+                    // Parse the base HSL color to extract its components
+                    let [hue, saturation, lightness] = baseHslColor.match(/\d+/g).map(Number);
+                
+                    // Define the maximum cost considered for scaling
+                    //const maxCost = 50000;
+                    // Calculate the scaling factor for adjustments, ensuring cost does not exceed maxCost
+                    const scale = Math.min(cost, maxCost) / maxCost;
+                
+                    // Adjust lightness for color intensity
+                    const maxLightness = 80; // Less dark for lower costs
+                    const minLightness = 10; // More dark for higher costs
+                    lightness = maxLightness - ((maxLightness - minLightness) * scale);
+                
+                    // Adjust opacity for transparency - assuming you want higher opacity for higher costs
+                    const minOpacity = 0.2; // More transparent for lower costs
+
+                    // Fetch the slider's value directly
+                    const maxOpacitySlider = document.getElementById('max-opacity-slider');
+                    const maxOpacity = parseFloat(maxOpacitySlider.value); // Use parseFloat to convert the string value to a number
+                    
+                    // Use maxOpacity in your calculations
+                    const opacity = minOpacity + ((maxOpacity - minOpacity) * scale);
+                    return {
+                        color: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+                        opacity: opacity
+                    };
+                };
+                function getColorByState(stateName) {
+                    switch (stateName) {
+                        case "MD": // Maryland
+                            return 'hsl(348, 100%, 61%)'; // Deep red
+                        case "NY": // New York
+                            return 'hsl(207, 90%, 54%)'; // Blue
+                        case "DE": // Delaware
+                            return 'hsl(48, 100%, 67%)'; // Yellow
+                        case "DC": // District of Columbia
+                            return 'hsl(300, 76%, 72%)'; // Purple
+                        case "PA": // Pennsylvania
+                            return 'hsl(120, 39%, 54%)'; // Green
+                        case "VA": // Virginia
+                            return 'hsl(30, 100%, 50%)'; // Orange
+                        case "WV": // West Virginia
+                            return 'hsl(0, 0%, 50%)'; // Grey
+                        default:
+                            return 'hsl(0, 0%, 90%)'; // Light grey for unknown or other states
+                    }
+                };
+                function getColorByType(stateName) {
+                    switch (stateName) {
+                        case "Cost": // District of Columbia
+                            return 'hsl(300, 76%, 72%)'; // Purple
+                        case "Nitrogen Reduction": // Virginia
+                            return 'hsl(30, 100%, 50%)'; // Orange
+                        default:
+                            return 'hsl(0, 0%, 90%)'; // Light grey for unknown or other states
+                    }
+                };
+	            function style2(feature) {
+	            	return {
+	            		weight: 2,
+	            		opacity: 1,
+	            		color: 'white',
+	            		dashArray: '3',
+	            		fillOpacity: 0.7,
+	            		fillColor: getColor(feature.properties.State)
+	            	};
+	            };
+
+                function styleIntensity(feature) {
+                    let baseColor = getColorByState(feature.properties.State);
+                    let adjustedColor = adjustColorIntensity(baseColor, feature.properties.Cost);
+                
+                    return {
+                        weight: 2,
+                        opacity: 1,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: 0.7,
+                        fillColor: adjustedColor // Use the adjusted color
+                    };
+                };
+
+                function style(feature) {
+                    // Obtain the base color and adjust based on the cost
+                    let baseColor = getColorByState(feature.properties.State);
+                    var maxCost = 2000000;
+                    let adjustments = adjustColorAndOpacity(baseColor, feature.properties.Cost, maxCost);
+                
+                    return {
+                        weight: 2,
+                        opacity: 1, // This affects the border of the feature
+                        color: 'white', // Border color
+                        dashArray: '3',
+                        fillOpacity: adjustments.opacity, // Use the adjusted opacity
+                        fillColor: adjustments.color // Use the adjusted color
+                    };
+                };
+                function styleCounty(feature) {
+                    // Obtain the base color and adjust based on the cost
+                    let baseColor = getColorByState(feature.properties.State);
+                    var maxCost = 2000000;
+                    let adjustments = adjustColorAndOpacity(baseColor, feature.properties.Cost, maxCost);
+                
+                    return {
+                        weight: 2,
+                        opacity: 1, // This affects the border of the feature
+                        color: 'white', // Border color
+                        dashArray: '3',
+                        fillOpacity: adjustments.opacity, // Use the adjusted opacity
+                        fillColor: adjustments.color // Use the adjusted color
+                    };
+                };
+                function highlightFeature(e) {
+                    var layer = e.target;
+                
+                    layer.setStyle({
+                        weight: 5,
+                        color: '#666',
+                        dashArray: '',
+                        fillOpacity: 0.7
+                    });
+                
+                    layer.bringToFront();
+                    info.update(layer.feature.properties);
+                }
+                function resetHighlight(e) {
+                    scenLrsGeojsonLayer.resetStyle(e.target);
+                }
+                function highlightFeatureCounty(e) {
+                    var layer = e.target;
+                
+                    layer.setStyle({
+                        weight: 5,
+                        color: '#666',
+                        dashArray: '',
+                        fillOpacity: 0.7
+                    });
+                
+                    layer.bringToFront();
+                    info.update(layer.feature.properties);
+                }
+                function resetHighlightCounty(e) {
+                    scenCountyGeojsonLayer.resetStyle(e.target);
+                }
+                var popupContentRight = `
+                  <select id="featureMenu" onchange="handleFeatureMenuChangeRight(event)">
+                    <option value="">Select an option</option>
+                    <option value="loads">Loads</option>
+                    <option value="bmps">BMPs</option>
+                    <option value="costs">Costs</option>
+                    </select><br/>
+                  <button onclick="handleButtonClickRight('load')">Load Data</button>
+                  <button onclick="handleButtonClickRight('load')">Load Data</button>
+                `;
+                function zoomToFeature(e) {
+                    console.log(e.target.feature.properties);
+                    mymap.fitBounds(e.target.getBounds());
+                }
+                function generatePopupContent(properties) {
+                    console.log(properties);
+
+                    var serializedProperties = JSON.stringify(properties);
+                    if (properties.GeographyType == 'lrs') {
+                        return `
+                            <button data-properties='${serializedProperties}' onclick="handleButtonClick('efficiency', this.getAttribute('data-properties'))">Efficiency and Land Conversion BMPs</button><br/>
+                            <button data-properties='${serializedProperties}' onclick="handleButtonClick('load', this.getAttribute('data-properties'))">Loads</button><br/>
+                        `;
+                    }
+                    else{
+                        return `
+                            <button data-properties='${serializedProperties}' onclick="handleButtonClick('efficiency', this.getAttribute('data-properties'))">Efficiency and Land Conversion BMPs</button><br/>
+                            <button data-properties='${serializedProperties}' onclick="handleButtonClick('animal-county', this.getAttribute('data-properties'))">Animal BMPs</button><br/>
+                            <button data-properties='${serializedProperties}' onclick="handleButtonClick('manure-county', this.getAttribute('data-properties'))">Manure Transport BMPs</button><br/>
+                            <button data-properties='${serializedProperties}' onclick="handleButtonClick('load', this.getAttribute('data-properties'))">Loads</button><br/>
+                        `;
+                    }
+                }
+                function popUpMenuOnFeature(e) {
+                    var properties = e.target.feature.properties;
+                    console.log(properties);
+                    var popupContent = generatePopupContent(properties);
+                    var popup = L.popup()
+                            .setLatLng(e.latlng) 
+                            .setContent(popupContent)
+                            .openOn(mymap);
+                }
+                function popUpMenuOnFeatureRight(e) {
+                    var popup = L.popup()
+                            .setLatLng(e.latlng) 
+                            .setContent(popupContentRight)
+                            .openOn(mymap);
+                }
+                
+                
+                function onEachFeature(feature, layer) {
+                    // to do a zoom to feature, add the following to the layer.on
+                    layer.on({
+                        mouseover: highlightFeature,
+                        mouseout: resetHighlight,
+                        click: popUpMenuOnFeature,
+                        contextmenu: popUpMenuOnFeatureRight
+                    });
+                        //click: zoomToFeature
+
+                }
+                function onEachFeatureCounty(feature, layer) {
+                    // to do a zoom to feature, add the following to the layer.on
+                    layer.on({
+                        mouseover: highlightFeature,
+                        mouseout: resetHighlightCounty,
+                        click: popUpMenuOnFeature,
+                        contextmenu: popUpMenuOnFeatureRight
+                    });
+                        //click: zoomToFeature
+
+                }
+
+
+                let chesapeakeLayer = L.geoJson(this.chesapeakeGeojsonData, {
+                    style: function(feature) {
+                        // Define a different style for cheapeakebay watershed to distinguish from counties
+                        return {
+                            weight: 2,
+                            opacity: 0.5,
+                            color: 'blue',
+                            dashArray: '',
+                            fillOpacity: 0.1,
+                            fillColor: 'green' 
+                        };
+                    }
+                }).addTo(mymap);
+
+                // Adding states GeoJSON to the map with a different style
+                let statesLayer = L.geoJson(this.statesGeojsonData, {
+                    style: function(feature) {
+                        // Define a different style for states to distinguish from counties
+                        return {
+                            weight: 2,
+                            opacity: 0.5,
+                            color: 'blue',
+                            dashArray: '',
+                            fillOpacity: 0.1,
+                            fillColor: 'blue' // Change as needed to visually separate states from counties
+                        };
+                    }
+                }).addTo(mymap);
+
+                let countyLayer = L.geoJson(this.countyGeojsonData, {
+                    style: function(feature) {
+                        // Define a different style for cheapeakebay watershed to distinguish from counties
+                        return {
+                            weight: 2,
+                            opacity: 0.5,
+                            color: 'blue',
+                            dashArray: '',
+                            fillOpacity: 0.1,
+                            fillColor: 'green' 
+                        };
+                    }
+                }).addTo(mymap);
+
+                let scenCountyGeojsonLayer = L.geoJson(this.scenCountyGeojsonData, {
+                    style: styleByCost,
+                    onEachFeature: onEachFeatureCounty
+
+                });
+
+                let scenCountyNRGeojsonLayer = L.geoJson(this.scenCountyGeojsonData, {
+                    style: styleByReduction,
+                    onEachFeature: onEachFeatureCounty
+
+                });
+
+
+                let  scenLrsNRGeojsonLayer = L.geoJson(this.scenLrsGeojsonData, {
+                        style: styleByReduction,
+                        onEachFeature: onEachFeature
+                });
+
+                let  scenLrsGeojsonLayer = L.geoJson(this.scenLrsGeojsonData, {
+                        style: styleByCost,
+                        onEachFeature: onEachFeature
+                }).addTo(mymap);
+
+
+
+	            mymap.attributionControl.addAttribution('CAST data &copy; <a href="http://www.chesapeakebay.net/">Cheapeakebay Program Office</a>');
+	            mymap.attributionControl.addAttribution('Decision making &copy; <a href="http://www.msu.edu/">Michigan State University</a>');
+
+
+	            const legend2 = L.control({position: 'bottomright'});
+	            const legend = L.control({position: 'bottomright'});
+
+
+legend.onAdd = function (map) {
+
+// Define breakpoints for cost and corresponding colors
+const costBreakpoints = [0, 500000, 1000000, 1500000, 2000000];
+//const costColors = ['#B3CDE3', '#6497B1', '#005B96', '#03396C']; // Light to dark blue
+
+const costColors = [
+    'hsl(240, 100%, 80%)', // Lightest blue, for lowest cost
+    'hsl(240, 100%, 65%)', // Light blue for lower-middle cost
+    'hsl(240, 100%, 50%)', // Deeper blue for higher-middle cost
+    'hsl(240, 100%, 35%)'  // Darkest blue, for highest cost
+];
+// Define breakpoints for nitrogen reduction and corresponding colors
+const reductionBreakpoints = [0, 12.5, 25, 37.5, 50];
+const reductionColors = ['#FFE5A5', '#FFCC80', '#FFB266', '#FF9933']; // Light to dark orange
+    const div = L.DomUtil.create('div', 'info legend');
+
+    // Add a title to your legend
+    div.innerHTML = '<h4>Legend</h4>';
+
+    // Cost Legend
+    div.innerHTML += '<strong>Cost ($)</strong><br>';
+    costBreakpoints.forEach((start, index) => {
+        if(index < costBreakpoints.length - 1) {
+            div.innerHTML += `<i style="background:${costColors[index]}"></i> $${start.toLocaleString()} - $${costBreakpoints[index + 1].toLocaleString()}<br>`;
+        }
+    });
+
+    // Adding a separator
+    div.innerHTML += '<hr>';
+
+    // Nitrogen Reduction Legend
+    div.innerHTML += '<strong>Nitrogen Reduction (%)</strong><br>';
+    reductionBreakpoints.forEach((start, index) => {
+        if(index < reductionBreakpoints.length - 1) {
+            div.innerHTML += `<i style="background:${reductionColors[index]}"></i> ${start}% - ${reductionBreakpoints[index + 1]}%<br>`;
+        }
+    });
+
+    return div;
+};
+
+
+                legend2.onAdd = function (map) {
+                    const div = L.DomUtil.create('div', 'info legend');
+                    // Define the cost ranges for the legend
+                    const costRanges = [0, 1000, 100000, 100000, 2000000];
+                    // Define the states to be represented in the legend
+                    const states = ["MD", "NY", "DE", "DC", "PA", "VA", "WV"];
+                    const maxCost = costRanges[costRanges.length - 1];
+                
+                    // Start table for the legend
+                    let tableHtml = '<table><tr><th>Cost Range</th>';
+                
+                    // Add a header for each state
+                    states.forEach(state => {
+                        tableHtml += `<th>${state}</th>`;
+                    });
+                    tableHtml += '</tr>';
+                
+                    for (let i = 0; i < costRanges.length - 1; i++) {
+                        // Calculate the midpoint of the current cost range for color adjustment
+                        const midPoint = (costRanges[i] + costRanges[i + 1]) / 2;
+                        // Generate the row for the current cost range
+                        tableHtml += `<tr><td>$${costRanges[i].toLocaleString()} - $${costRanges[i + 1].toLocaleString()}</td>`;
+                
+                        states.forEach(state => {
+                            // Get the base color for the current state
+                            const baseColor = getColorByState(state);
+                            // Use adjustColorAndOpacity to adjust the color based on the midpoint of the range
+                            let { color } = adjustColorAndOpacity(baseColor, midPoint, maxCost);
+                
+                            // Add a cell for this state with the adjusted color
+                            tableHtml += `<td style="background-color:${color};opacity:1;width:20px;height:20px;"></td>`;
+                        });
+                
+                        tableHtml += '</tr>';
+                    }
+                    tableHtml += '</table>';
+                
+                    div.innerHTML = tableHtml;
+                    return div;
+                };
+
+	            legend.addTo(mymap);
+                // Layer control setup
+                var baseLayers = {
+                    "OpenStreetMap": baseLayer,
+                    // Add other base layers here if you have any
+                };
+
+                var overlays = {
+                    "LRS (Cost)": scenLrsGeojsonLayer,
+                    "Counties (Cost)": scenCountyGeojsonLayer,
+                    "LRS (Nitrogen Reduction)": scenLrsNRGeojsonLayer,
+                    "Counties (Nitrogen Reduction)": scenCountyNRGeojsonLayer,
+                    "Counties": countyLayer,
+                    "States": statesLayer,
+                    "Chesapeake Bay Watershed": chesapeakeLayer,
+                    // Add other overlays here if needed
+                };
+
+                L.control.layers(baseLayers, overlays).addTo(mymap);
+
+                scenLrsGeojsonLayer.bringToFront();
+          }
+      };
+  }
+
+  function handleFeatureMenuChange(event, fipsCode) {
+      var selectedOption = event.target.value;
+      console.log("Selected option:", selectedOption);
+      // Implement your logic based on the selected option here
+      // For example, updating the map or displaying additional info
+  }
+    function handleButtonClick(action, data) { 
+      console.log("Loading data...");
+    if (typeof data === 'string') {
+        data = JSON.parse(data);
+    }
+      console.log(data);
+      if(action === 'efficiency') {
+          var ncolumn = 0;
+          var searchSubject = data['LndRvrSeg'];
+
+        if (data.GeographyType === 'lrs') {
+            console.log("Loading data for LRS...");
+            
+
+        } else {
+            console.log(data.GeographyType);
+            console.log("Loading data for County...");
+        } 
+
+        solutionId = JSON.parse(document.getElementById('solution-id').textContent);
+
+        const url = `/solution/view/${solutionId}/`; // Adjust the URL pattern as needed
+
+        const event = new CustomEvent('changeTab', { detail: { tabName: 'tab1' } });
+        window.dispatchEvent(event);
+
+        setTimeout(() => {
+            initializeDataTables('');
+            var table = $('.my-table-efficiency').DataTable(); // Initialize your DataTable
+            //table.column(0).search('N24003WL0_4420_0000').draw(); // Example filter, replace with your actual filter logic
+            table.column(0).search(data['LndRvrSeg']).draw(); // Filter the table based on the provided value
+        }, 100); // Adjust timeout as needed to ensure the table is visible and rendered
+      } else if(action === 'animal') {
+
+
+        solutionId = JSON.parse(document.getElementById('solution-id').textContent);
+
+        const url = `/solution/view/${solutionId}/`; // Adjust the URL pattern as needed
+
+        const event = new CustomEvent('changeTab', { detail: { tabName: 'tab4' } });
+        window.dispatchEvent(event);
+
+        setTimeout(() => {
+            initializeDataTables('');
+            var table = $('.my-table-loads').DataTable(); // Initialize your DataTable
+            //table.column(0).search('N24003WL0_4420_0000').draw(); // Example filter, replace with your actual filter logic
+            table.column(1).search(data['County']).draw(); // Filter the table based on the provided value
+        }, 100); // Adjust timeout as needed to ensure the table is visible and rendered
+      } else if(action === 'manure') {
+      } else if(action === 'load') {
+          var ncolumn = 2;
+          var searchSubject = data['LndRvrSeg'];
+
+        if (data.GeographyType === 'lrs') {
+            console.log("Loading data for LRS...");
+            
+
+        } else {
+            ncolumn = 1;
+            searchSubject = data['County'];
+            console.log(data.GeographyType);
+            console.log("Loading data for County...");
+        } 
+        solutionId = JSON.parse(document.getElementById('solution-id').textContent);
+
+        const url = `/solution/view/${solutionId}/`; // Adjust the URL pattern as needed
+
+        const event = new CustomEvent('changeTab', { detail: { tabName: 'tab4' } });
+        window.dispatchEvent(event);
+
+        setTimeout(() => {
+            initializeDataTables('');
+            var table = $('.my-table-loads').DataTable(); // Initialize your DataTable
+            //table.column(0).search('N24003WL0_4420_0000').draw(); // Example filter, replace with your actual filter logic
+            table.column(ncolumn).search(searchSubject).draw(); // Filter the table based on the provided value
+        }, 100); // Adjust timeout as needed to ensure the table is visible and rendered
+      }
+
+
+          // Make the HTMX request
+          /*
+          htmx.ajax('GET', url, {
+              target: '#table-container3',
+              values: {
+                  geography_id: id, 
+                  geography_type: geographyType, 
+                  county_id: countyId,
+                  selected_edge: document.getElementById('selectionEdgeId').value, 
+                  view_type: document.getElementById('viewTypeId').value, 
+                  scale_type: document.getElementById('scaleTypeId').value, 
+                  table_type: document.getElementById('tableTypeId').value, 
+
+              }
+          });
+          */
+          // Here, implement the logic for loading data,
+          // such as making an AJAX request to fetch data and then displaying it on the map.
+      
+  }
+
+  function handleFeatureMenuChangeRight(event) {
+      var selectedOption = event.target.value;
+      console.log("Selected option:", selectedOption);
+      // Implement your logic based on the selected option here
+      // For example, updating the map or displaying additional info
+  }
+  function handleButtonClickRight(action) {
+      if(action === 'load') {
+          console.log("Loading data...");
+          // Here, implement the logic for loading data,
+          // such as making an AJAX request to fetch data and then displaying it on the map.
+      }
+  }
+
+function chartComponent() {
+    return {
+        data: [], // Initialize data as an empty array
+        init() {
+            // Parse the data passed from Django
+            this.data = JSON.parse('{{ summary_bmps_json | safe }}');
+            this.createChart();
+
+            window.addEventListener('resize', this.createChart); // Re-render chart on window resize for responsiveness
+        },
+        createChart() {
+
+            // Prepare the data for Plotly
+
+            const sectorColors = {
+                'Wastewater': '#1f77b4', // Example color
+                'Septic': '#ff7f0e', // Example color
+                'Natural': '#2ca02c', // Example color
+                'Developed': '#d62728', // Red
+                'Agriculture': '#9467bd' // Example color
+            };
+            let transformedData = [];
+
+            // Group data by sector to create a trace for each sector
+            Object.keys(sectorColors).forEach(sector => {
+                const sectorData = this.data.filter(item => item.sector === sector);
+                if (sectorData.length > 0) {
+                    transformedData.push({
+                        x: sectorData.map(item => item.amount),
+                        y: sectorData.map(item => item.bmp),
+                        type: 'bar',
+                        orientation: 'h',
+                        marker: {
+                            color: sectorColors[sector]
+                        },
+                        name: sector
+                    });
+                }
+            });
+
+            const layout = {
+                title: 'Implemented BMPs',
+                barmode: 'stack',
+                xaxis: {
+                    type: 'log',
+                    title: 'Acres (log scale)',
+                    tickvals: [1, 10, 100, 1000, 10000], // Specify the tick values you want
+                    ticktext: ['1', '10', '100', '1k', '10k'] // Customize the display text for each tick
+                },
+                yaxis: {
+                    title: 'BMP',
+                    automargin: true,
+                }
+            };
+            
+            // Corrected to use 'transformedData'
+            Plotly.newPlot('chart', transformedData, layout);
+        }
+    };
+}
+
+function pieChartComponent() {
+    return {
+        data: [], // Initialize data as an empty array
+        init() {
+            // Parse the data passed from Django
+            this.data = JSON.parse('{{ summary_bmps_json | safe }}');
+            this.createPieChart();
+
+            window.addEventListener('resize', this.createPieChart); // Optional: Re-render chart on window resize for responsiveness
+        },
+        createPieChart() {
+            // Prepare the data for the pie chart
+            const sectorColors = {
+                'Wastewater': '#1f77b4', // Example color
+                'Septic': '#ff7f0e', // Example color
+                'Natural': '#2ca02c', // Example color
+                'Developed': '#d62728', // Red
+                'Agriculture': '#9467bd' // Example color
+            };
+
+            const labels = this.data.map(item => item.bmp); // BMP names for pie chart labels
+            const values = this.data.map(item => item.amount); // Amount of acres for pie chart values
+            const colors = this.data.map(item => sectorColors[item.sector]); // Sector-based colors for each BMP
+
+            const pieData = [{
+                labels: labels,
+                values: values,
+                type: 'pie',
+                marker: {
+                    colors: colors // Assigning colors based on the sector
+                },
+                textinfo: 'label+percent',
+                insidetextorientation: 'radial'
+            }];
+
+            const layout = {
+                title: 'Implemented BMPs by Sector',
+                autosize: true, // Ensure the plot resizes correctly within its container
+                margin: { l: 0, r: 0, b: 0, t: 30 } // Adjust margins to fit your needs
+            };
+
+            Plotly.newPlot('pieChart', pieData, layout);
+        }
+    };
+}
+function chatBot() {
+    return {
+        openModal: false,
+        userInput: '',
+        messages: [],
+        solutionId: null,
+        init() {
+            this.solutionId = JSON.parse(document.getElementById('solution-id').textContent);
+        },
+        sendUserInput() {
+            const userInput = this.userInput.trim();
+            if (!userInput) return;
+            this.messages.push({ type: 'user', text: userInput });
+            this.userInput = ''; // Clear input after sending
+            this.fetchBotResponse(userInput);
+        },
+        async fetchBotResponse(userInput) {
+            const csrfToken = Alpine.store('csrf').token; // Get CSRF token from Alpine store
+            solutionId = JSON.parse(document.getElementById('solution-id').textContent);
+            const response = await fetch('/solution/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken // Use the CSRF token from the store
+                },
+
+                body: JSON.stringify({ userInput, solution_id: solutionId })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                this.messages.push({ type: 'bot', text: data.content }); // Make sure to access the correct field
+            } else {
+                console.error('Failed to fetch chat response:', response.statusText);
+            }
+            // Rest of your method...
+        }
+
+    };
+}
+document.addEventListener('alpine:init', () => {
+    Alpine.store('csrf', {
+        token: '{{ csrf_token }}'
+    });
+});
+</script>
+{% endblock %}

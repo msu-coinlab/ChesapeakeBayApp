@@ -1,0 +1,20 @@
+<!-- chat_modal.html -->
+
+console.log("Chat modal loaded");
+<div class="modal" onclick="event.stopPropagation()">
+  <div class="modal-box relative">
+    <a href="#" class="btn btn-sm btn-circle absolute right-2 top-2" hx-get="/close-modal/" hx-target="#chat-modal">✕</a>
+    <h3 class="text-lg font-bold">Chat with us!</h3>
+    <div class="py-4">
+      <!-- Chat content goes here. You can use a form for input or dynamically load chat history -->
+    </div>
+  </div>
+</div>
+<!-- solution/partials/chat_modal.html -->
+<div class="modal" style="display:block;">
+  <div class="modal-content">
+    <span class="close-button">&times;</span>
+    <h2>Chat with us</h2>
+    <!-- Your chat UI here -->
+  </div>
+</div>

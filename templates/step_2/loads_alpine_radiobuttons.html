@@ -1,0 +1,386 @@
+{% extends 'core/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load partials %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+
+{{ total_acres|floatformat:2|json_script:"total-acres" }}
+{{ acres|json_script:"acres" }}
+{{ acres_pct|json_script:"acres-pct" }}
+
+{{ total_nitrogen|floatformat:2|json_script:"total-nitrogen" }}
+{{ nitrogen|json_script:"nitrogen" }}
+{{ nitrogen_pct|json_script:"nitrogen-pct" }}
+
+{{ total_phosphorus|floatformat:2|json_script:"total-phosphorus" }}
+{{ phosphorus|json_script:"phosphorus" }}
+{{ phosphorus_pct|json_script:"phosphorus-pct" }}
+
+{{ total_sediments|floatformat:2|json_script:"total-sediments" }}
+{{ sediments|json_script:"sediments" }}
+{{ sediments_pct|json_script:"sediments-pct" }}
+
+{{ total_oxygen|floatformat:2|json_script:"total-oxygen" }}
+{{ oxygen|json_script:"oxygen" }}
+{{ oxygen_pct|json_script:"oxygen-pct" }}
+
+
+{{ selected_pollutant|json_script:"selected-pollutant" }}
+{{ total_budget|json_script:"total-budget" }}
+
+
+<div class="container mx-auto p-4" x-data="acresCalculator()">
+
+    <div class="flex justify-end mb-4">
+        <a href="{% url 'optimization' scenario_id %}" class="btn bg-green-600 hover:bg-green-800 text-white">Optimize</a>
+
+    </div>
+    <div class="py-6 mb-6"> 
+        <ul class="steps"> 
+          <li class="step">
+          <a href="{% url 'step_1' scenario_id %}">Info</a></li>
+          <li class="step step-primary">
+            <a href="{% url 'step_2' scenario_id %}">
+                Loads</a></li>
+          <li class="step">
+            <a href="{% url 'step_3' scenario_id %}">
+                BMP Selection</a></li>
+          <li class="step">
+            <a href="{% url 'step_4' scenario_id %}">
+                Update Costs</a></li>
+          <li class="step">
+            <a href="{% url 'step_5' scenario_id %}">
+                BMP Constraint</a></li>
+          <li class="step">
+              BMP Constraint Advanced</li>
+        </ul>
+    </div>
+    
+        <table class="table w-full text-lg shadow-md" id="bmp_summary_table">
+          <thead>
+            <tr class="h-12 text-lg">
+              <th></th>
+              <th>Load</th>
+              <th>Initial Load</th>
+              <th>Removal Percentage</th>
+              <th>Expected load</th>
+            </tr>
+          </thead>
+          <tbody>
+              <tr class="h-12" x-data="{ enabled: false}">
+              <td>
+                <input type="radio" 
+                    name="select_row" 
+                    @click="selected_pollutant='nitrogen'" 
+                    x-bind:checked="selected_pollutant === 'nitrogen'"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="change"
+                    hx-vals='javascript:{"new_value": "nitrogen", "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                    >
+              </td>
+              <td class="text-left">Nitrogen</td>
+              <td class="text-right">{{ total_nitrogen |floatformat:2|intcomma }}</td>
+
+              <td>
+                  <div class="flex items-center">
+                      <input class="input input-bordered"
+                        :disabled="selected_pollutant !== 'nitrogen'"
+                        type="number" 
+                        x-model="nitrogen_pct" 
+                        x-on:input="updateNitrogen"
+                        hx-post="{% url 'update_scenario_loads' %}"
+                        hx-trigger="input delay:3s"
+                        hx-vals='javascript:{"new_value": document.getElementById("nitrogen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "nitrogen_pct"}'
+                        id="nitrogen_pct_id"
+                        name="nitrogen_pct_name"
+                        >
+                      <span>%</span>
+                  </div>
+              </td>
+              <td>
+                  <input class="input input-bordered" 
+                    :disabled="selected_pollutant !== 'nitrogen'"
+                    x-model="nitrogen" 
+                    x-on:input="updateNitrogenPct"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("nitrogen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "nitrogen_pct"}'
+                    id="nitrogen_id"
+                    name="nitrogen_name"
+                    >
+                <span>lbs</span>
+              </td>
+            </tr>
+            <tr class="h-12" x-data="{ enabled: false }">
+              <td>
+                <input type="radio" name="select_row" @click="selected_pollutant='phosphorus'" x-bind:checked="selected_pollutant === 'phosphorus'"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="change"
+                    hx-vals='javascript:{"new_value": "phosphorus", "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                    >
+              </td>
+              <td class="text-left">Phosphorus</td>
+              <td class="text-right">{{ total_phosphorus |floatformat:2|intcomma }}</td>
+              <td>
+            
+                <input class="input input-bordered" 
+                    :disabled="selected_pollutant !== 'phosphorus'"
+                    type="number" 
+                    x-model="phosphorus_pct" 
+                    x-on:input="updatePhosphorus"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("phosphorus_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "phosphorus_pct"}'
+                    id="phosphorus_pct_id"
+                    name="phosphorus_pct_name"
+                    >
+                <span>%</span>
+              </td>
+              <td>
+                  <input class="input input-bordered" 
+                    :disabled="selected_pollutant !== 'phosphorus'"
+                    type="number" 
+                    x-model="phosphorus" 
+                    x-on:input="updatePhosphorusPct"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("phosphorus_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "phosphorus_pct"}'
+                    id="phosphorus_id"
+                    name="phosphorus_name"
+                    >
+                <span>lbs</span>
+              </td>
+            </tr>
+            <tr class="h-12" x-data="{ enabled: false }">
+              <td>
+                <input type="radio" name="select_row" @click="selected_pollutant='sediments'" x-bind:checked="selected_pollutant === 'sediments'"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="change"
+                    hx-vals='javascript:{"new_value": "sediments", "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                    >
+              </td>
+              <td class="text-left">Sediments</td>
+              <td class="text-right">{{ total_sediments |floatformat:2|intcomma }}</td>
+              <td>
+            
+                <input class="input input-bordered" 
+                    :disabled="selected_pollutant !== 'sediments'"
+                    type="number" 
+                    x-model="sediments_pct" 
+                    x-on:input="updateSediments"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("sediments_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "sediments_pct"}'
+                    id="sediments_pct_id"
+                    name="sediments_pct_name"
+                    >
+                <span>%</span>
+              </td>
+              <td>
+                  <input class="input input-bordered"
+                    :disabled="selected_pollutant !== 'sediments'"
+                    type="number" 
+                    x-model="sediments" 
+                    x-on:input="updateSedimentsPct"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("sediments_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "sediments_pct"}'
+                    id="sediments_id"
+                    name="sediments_name"
+                    >
+                <span>lbs</span>
+              </td>
+            </tr>
+            <tr class="h-12" x-data="{ enabled: false }">
+              <td>
+                <input type="radio" name="select_row" @click="selected_pollutant='oxygen'" x-bind:checked="selected_pollutant === 'oxygen'"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="change" 
+                    hx-vals='javascript:{"new_value": "oxygen", "scenario_id": {{ scenario_id }}, "field_name": "selected_pollutant"}'
+                    >
+              </td>
+              <td class="text-left">Oxygen</td>
+              <td class="text-right">{{ total_oxygen|floatformat:2|intcomma }}</td>
+              <td>
+                <input class="input input-bordered" 
+                    :disabled="selected_pollutant !== 'oxygen'"
+
+                    type="number" 
+                    x-model="oxygen_pct" 
+                    x-on:input="updateOxygen"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("oxygen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "oxygen_pct"}'
+                    id="oxygen_pct_id"
+                    name="oxygen_pct_name"
+                    >
+                <span>%</span>
+              </td>
+              <td>
+                  <input class="input input-bordered"
+                    :disabled="selected_pollutant !== 'oxygen'"
+                    type="number" 
+                    x-model="oxygen" 
+                    x-on:input="updateOxygenPct"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("oxygen_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "oxygen_pct"}'
+                    id="oxygen_id"
+                    name="oxygen_name"
+                    >
+                <span>lbs</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="flex items-center mb-3 text-lg">
+          <label class="flex-1">Total budget for BMP implementation*:</label>
+          <div class="flex-1">
+            <input class="input input-bordered bg-white shadow-md" 
+                id="total_budget_id" 
+                type="number" 
+                x-model="total_budget"
+                hx-post="{% url 'update_scenario_loads' %}"
+                hx-trigger="input delay:3s"
+                hx-vals='javascript:{"new_value": document.getElementById("total_budget_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "total_budget"}'
+                />
+          </div>
+        </div>
+    <div id="content_step" class="space-y-6 py-8">
+        <table class="table w-full text-lg shadow-md">
+            <tr class="h-12">
+                <td>Total Acres Allocated to BMPs: {{ total_acres|floatformat:2|intcomma }} acres</td>
+                <td>
+                    <input class="input input-bordered" type="number" x-model="acres_pct" 
+                    x-on:input="updateAcres"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("acres_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "acres_pct"}'
+                    id="acres_pct_id"
+                    name="acres_pct_name"
+                    >
+                    <span>%</span>
+                </td>
+                <td>
+                    <input class="input input-bordered" type="number" x-model="acres" 
+                    
+                    x-on:input="updatePercentage"
+                    hx-post="{% url 'update_scenario_loads' %}"
+                    hx-trigger="input delay:3s"
+                    hx-vals='javascript:{"new_value": document.getElementById("acres_pct_id").value.toString(), "scenario_id": {{ scenario_id }}, "field_name": "acres_pct"}'
+                    id="acres_id"
+                    name="acres_name"
+                    >
+                    <span>acres</span>
+                </td>
+            </tr>
+        </table>
+    
+        <div class="flex justify-between py-6" >
+                <a href="{% url 'step_1' scenario_id %}" class="btn btn-primary">Previous</a>
+                <a href="{% url 'step_3' scenario_id %}" class="btn btn-primary">Next</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function acresCalculator() {
+        return {
+            total_acres: null,
+            acres: null,
+            acres_pct: null,
+            total_nitrogen: null,
+            nitrogen: null,
+            nitrogen_pct: null,
+            total_phosphorus: null,
+            phosphorus: null,
+            phosphorus_pct: null,
+            total_sediments: null,
+            sediments: null,
+            sediments_pct: null,
+            total_oxygen: null,
+            oxygen: null,
+            oxygen_pct: null,
+            selected_pollutant: null,
+            total_budget: null,
+            init() {
+                this.total_acres = JSON.parse(document.getElementById('total-acres').textContent);
+                this.total_acres = parseFloat(this.total_acres).toFixed(2);
+                this.acres_pct = JSON.parse(document.getElementById('acres-pct').textContent);
+                this.acres_pct = parseFloat(this.acres_pct).toFixed(2);
+                this.acres = JSON.parse(document.getElementById('acres').textContent);
+                this.acres = parseFloat(this.acres).toFixed(2);
+                this.total_nitrogen = JSON.parse(document.getElementById('total-nitrogen').textContent);
+                this.total_nitrogen = parseFloat(this.total_nitrogen).toFixed(2);
+                this.nitrogen_pct = JSON.parse(document.getElementById('nitrogen-pct').textContent);
+                this.nitrogen_pct = parseFloat(this.nitrogen_pct).toFixed(2);
+                this.nitrogen = JSON.parse(document.getElementById('nitrogen').textContent);
+                this.nitrogen = parseFloat(this.nitrogen).toFixed(2);
+
+                this.total_phosphorus = JSON.parse(document.getElementById('total-phosphorus').textContent);
+                this.total_phosphorus = parseFloat(this.total_phosphorus).toFixed(2);
+                this.phosphorus_pct = JSON.parse(document.getElementById('phosphorus-pct').textContent);
+                this.phosphorus_pct = parseFloat(this.phosphorus_pct).toFixed(2);
+                this.phosphorus = JSON.parse(document.getElementById('phosphorus').textContent);
+                this.phosphorus = parseFloat(this.phosphorus).toFixed(2);
+
+
+
+                this.total_sediments = JSON.parse(document.getElementById('total-sediments').textContent);
+                this.total_sediments = parseFloat(this.total_sediments).toFixed(2);
+                this.sediments_pct = JSON.parse(document.getElementById('sediments-pct').textContent);
+                this.sediments_pct = parseFloat(this.sediments_pct).toFixed(2);
+                this.sediments = JSON.parse(document.getElementById('sediments').textContent);
+                this.sediments = parseFloat(this.sediments).toFixed(2);
+
+
+
+                this.total_oxygen = JSON.parse(document.getElementById('total-oxygen').textContent);
+                this.total_oxygen = parseFloat(this.total_oxygen).toFixed(2);
+                this.oxygen_pct = JSON.parse(document.getElementById('oxygen-pct').textContent);
+                this.oxygen_pct = parseFloat(this.oxygen_pct).toFixed(2);
+                this.oxygen = JSON.parse(document.getElementById('oxygen').textContent);
+                this.oxygen = parseFloat(this.oxygen).toFixed(2);
+
+                this.selected_pollutant = JSON.parse(document.getElementById('selected-pollutant').textContent);
+                this.total_budget = JSON.parse(document.getElementById('total-budget').textContent);
+                this.total_budget = parseFloat(this.total_budget).toFixed(2);
+            },
+            updateAcres() {
+                this.acres = ((this.acres_pct* this.total_acres) / 100).toFixed(2);
+            },
+            updatePercentage() {
+                this.acres_pct = ((this.acres / this.total_acres) * 100).toFixed(2);
+            },
+            updateNitrogen() {
+                this.nitrogen = ((this.nitrogen_pct* this.total_nitrogen) / 100).toFixed(2);
+            },
+            updateNitrogenPct() {
+                this.nitrogen_pct = ((this.nitrogen / this.total_nitrogen) * 100).toFixed(2);
+            },
+            updatePhosphorus() {
+                this.phosphorus = ((this.phosphorus_pct* this.total_phosphorus) / 100).toFixed(2);
+            },
+            updatePhosphorusPct() {
+                this.phosphorus_pct = ((this.phosphorus / this.total_phosphorus) * 100).toFixed(2);
+            },
+            updateSediments() {
+                this.sediments = ((this.sediments_pct* this.total_sediments) / 100).toFixed(2);
+            },
+            updateSedimentsPct() {
+                this.sediments_pct = ((this.sediments / this.total_sediments) * 100).toFixed(2);
+            },
+            updateOxygen() {
+                this.oxygen = ((this.oxygen_pct* this.total_oxygen) / 100).toFixed(2);
+            },
+            updateOxygenPct() {
+                this.oxygen_pct = ((this.oxygen / this.total_oxygen) * 100).toFixed(2);
+            }
+        };
+    }
+</script>
+{% endblock %}
+
